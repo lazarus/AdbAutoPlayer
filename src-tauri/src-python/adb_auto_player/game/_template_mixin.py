@@ -101,6 +101,7 @@ class TemplateMixin(InputMixin):
         template: str | Path,
         grayscale: bool = False,
         crop_regions: CropRegions = CropRegions(),
+        screenshot: np.ndarray | None = None,
     ) -> None | TemplateMatchResult:
         """Find the most different match.
 
@@ -108,12 +109,15 @@ class TemplateMixin(InputMixin):
             template (str | Path): Path to template image.
             grayscale (bool, optional): Convert to grayscale boolean. Defaults to False.
             crop_regions (CropRegions, optional): Crop percentages.
+            screenshot (np.ndarray, optional): Screenshot image. Will fetch screenshot
+                if None
 
         Returns:
             None | TemplateMatchResult: None or Result of worst Match.
         """
         crop_result = Cropping.crop(
-            image=self.get_screenshot(), crop_regions=crop_regions
+            image=screenshot if screenshot is not None else self.get_screenshot(),
+            crop_regions=crop_regions,
         )
 
         result = TemplateMatcher.find_worst_template_match(
@@ -136,6 +140,7 @@ class TemplateMixin(InputMixin):
         grayscale: bool = False,
         crop_regions: CropRegions = CropRegions(),
         min_distance: int = 10,
+        screenshot: np.ndarray | None = None,
     ) -> list[TemplateMatchResult]:
         """Find all matches.
 
@@ -146,12 +151,15 @@ class TemplateMixin(InputMixin):
             crop_regions (CropRegions, optional): Crop percentages.
             min_distance (int, optional): Minimum distance between matches.
                 Defaults to 10.
+            screenshot (np.ndarray, optional): Screenshot image. Will fetch screenshot
+                if None
 
         Returns:
             list[tuple[int, int]]: List of found coordinates.
         """
         crop_result = Cropping.crop(
-            image=self.get_screenshot(), crop_regions=crop_regions
+            image=screenshot if screenshot is not None else self.get_screenshot(),
+            crop_regions=crop_regions,
         )
 
         result = TemplateMatcher.find_all_template_matches(

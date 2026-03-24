@@ -307,8 +307,7 @@ class PopupMessageHandler(Game, ABC):
 
     def _preprocess_screenshot_for_popup(self) -> PopupPreprocessResult | None:
         screenshot = self.get_screenshot()
-        image = screenshot.copy()
-        height, width = image.shape[:2]
+        height, width = screenshot.shape[:2]
 
         height_5_percent = int(0.05 * height)
         height_35_percent = int(0.35 * height)
@@ -320,7 +319,7 @@ class PopupMessageHandler(Game, ABC):
             ],
             threshold=ConfidenceValue("80%"),
             crop_regions=CropRegions(left=0.5, top=0.4),
-            screenshot=image,
+            screenshot=screenshot,
         ):
             crop_bottom = button.box.top - height_5_percent
         else:
@@ -332,7 +331,7 @@ class PopupMessageHandler(Game, ABC):
             match_mode=MatchMode.TOP_LEFT,
             threshold=ConfidenceValue("80%"),
             crop_regions=CropRegions(right=0.8, top=0.2, bottom=0.6),
-            screenshot=image,
+            screenshot=screenshot,
         ):
             crop_top = checkbox.box.bottom + height_5_percent
         else:
@@ -340,7 +339,7 @@ class PopupMessageHandler(Game, ABC):
             # that is more than 8 lines of text which I do not think there is.
             crop_top = height_35_percent
 
-        image = image[crop_top:crop_bottom, 0:width]
+        image = screenshot[crop_top:crop_bottom, 0:width]
         image = Color.to_grayscale(image, ColorFormat.BGR)
 
         return PopupPreprocessResult(
