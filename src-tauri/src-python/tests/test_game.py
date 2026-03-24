@@ -4,9 +4,14 @@ import math
 import time
 import unittest
 from pathlib import Path
-from unittest.mock import DEFAULT, patch
+from unittest.mock import DEFAULT, MagicMock, patch
 
-from adb_auto_player.exceptions import GameTimeoutError
+from adb_auto_player.exceptions import (
+    AutoPlayerUnrecoverableError,
+    GameNotRunningOrFrozenError,
+    GameTimeoutError,
+)
+from adb_auto_player.exceptions.game import GameActionFailedError
 from adb_auto_player.game import Game
 from adb_auto_player.image_manipulation import IO
 from adb_auto_player.models.device import DisplayInfo, Orientation, Resolution
@@ -216,3 +221,114 @@ class TestGame(unittest.TestCase):
             f"Cropped Image Matching Results: {cropped_results}\n"
         )
         self.addCleanup(lambda: print(print_output))
+
+
+class TestGetGameModule(unittest.TestCase):
+    """Tests for Game._get_game_module module-path parsing."""
+
+    def _game_with_module(self, module: str) -> MockGame:
+        game = MockGame()
+        with patch.object(type(game), "__module__", new=module):
+            pass
+        # Patch the class's __module__ so _get_game_module sees it
+        game.__class__ = type(
+            "PatchedMockGame",
+            (MockGame,),
+            {"__module__": module},
+        )
+        return game
+
+    def test_standard_afk_journey_path(self):
+        """Extracts module name immediately after 'games'."""
+        game = self._game_with_module(
+            "adb_auto_player.games.afk_journey.mixins.dailies"
+        )
+        self.assertEqual(game._get_game_module(), "afk_journey")
+
+    def test_top_level_game_module(self):
+        """Works when the game module is directly under 'games'."""
+        game = self._game_with_module("adb_auto_player.games.guitar_girl")
+        self.assertEqual(game._get_game_module(), "guitar_girl")
+
+    def test_no_games_in_path_raises(self):
+        """Raises ValueError when 'games' is absent from the module path."""
+        game = self._game_with_module("adb_auto_player.utils.something")
+        with self.assertRaises(ValueError):
+            game._get_game_module()
+
+    def test_games_at_end_of_path_raises(self):
+        """Raises ValueError when 'games' is the last segment."""
+        game = self._game_with_module("adb_auto_player.games")
+        with self.assertRaises(ValueError):
+            game._get_game_module()
+
+
+class TestHandleTaskError(unittest.TestCase):
+    """Tests for TaskRunnerMixin._handle_task_error error routing."""
+
+    def setUp(self):
+        self.game = MockGame()
+        self.game._device = MagicMock()  # type: ignore[assignment]
+
+    @patch.object(MockGame, "restart_game")
+    @patch.object(MockGame, "start_game")
+    def test_none_error_is_noop(self, mock_start: MagicMock, mock_restart: MagicMock):
+        """Returns immediately when error is None."""
+        self.game._handle_task_error("task", None)
+        mock_restart.assert_not_called()
+        mock_start.assert_not_called()
+
+    def test_unrecoverable_error_reraises(self):
+        """Re-raises AutoPlayerUnrecoverableError unchanged."""
+        error = AutoPlayerUnrecoverableError("fatal")
+        with self.assertRaises(AutoPlayerUnrecoverableError) as ctx:
+            self.game._handle_task_error("task", error)
+        self.assertIs(ctx.exception, error)
+
+    @patch.object(MockGame, "restart_game")
+    @patch.object(MockGame, "start_game")
+    def test_game_not_running_or_frozen_restarts(
+        self, mock_start: MagicMock, mock_restart: MagicMock
+    ):
+        """Calls restart_game() when game is frozen or crashed."""
+        self.game._handle_task_error("task", GameNotRunningOrFrozenError("frozen"))
+        mock_restart.assert_called_once()
+        mock_start.assert_not_called()
+
+    @patch.object(MockGame, "is_game_running", return_value=False)
+    @patch.object(MockGame, "restart_game")
+    @patch.object(MockGame, "start_game")
+    def test_auto_player_error_game_not_running_starts_game(
+        self,
+        mock_start: MagicMock,
+        mock_restart: MagicMock,
+        _mock_is_running: MagicMock,
+    ):
+        """Calls start_game() when AutoPlayerError occurs and game is not running."""
+        self.game._handle_task_error("task", GameActionFailedError("failed"))
+        mock_start.assert_called_once()
+        mock_restart.assert_not_called()
+
+    @patch.object(MockGame, "is_game_running", return_value=True)
+    @patch.object(MockGame, "restart_game")
+    @patch.object(MockGame, "start_game")
+    def test_auto_player_error_game_still_running_moves_on(
+        self,
+        mock_start: MagicMock,
+        mock_restart: MagicMock,
+        _mock_is_running: MagicMock,
+    ):
+        """Does not restart or start when AutoPlayerError occurs but game is running."""
+        self.game._handle_task_error("task", GameActionFailedError("failed"))
+        mock_restart.assert_not_called()
+        mock_start.assert_not_called()
+
+    @patch.object(MockGame, "restart_game")
+    @patch.object(MockGame, "start_game")
+    def test_generic_exception_does_not_raise(
+        self, mock_start: MagicMock, mock_restart: MagicMock
+    ):
+        """Logs unexpected errors without re-raising or restarting."""
+        self.game._handle_task_error("task", RuntimeError("unexpected"))
+        mock_restart.assert_not_called()
+        mock_start.assert_not_called()
