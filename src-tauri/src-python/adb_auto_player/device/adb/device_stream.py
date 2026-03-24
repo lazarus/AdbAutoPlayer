@@ -4,6 +4,7 @@ import logging
 import threading
 import time
 from functools import lru_cache
+from typing import cast
 
 import av
 import numpy as np
@@ -61,7 +62,7 @@ def _get_codec_context() -> VideoCodecContext:
     decoder_name = _get_best_decoder(
         SettingsLoader.adb_settings().advanced.hardware_decoding
     )
-    return VideoCodecContext.create(decoder_name, "r")  # type: ignore[invalid-return-type]
+    return cast(VideoCodecContext, VideoCodecContext.create(decoder_name, "r"))
 
 
 class StreamingNotSupportedError(AutoPlayerWarningError):
@@ -165,7 +166,8 @@ class DeviceStream:
 
                 buffer = b""
 
-            except Exception:
+            except Exception as e:
+                logging.debug(f"Frame decode error: {e}")
                 if len(buffer) > 1024 * 1024:
                     buffer = buffer[-1024 * 1024 :]
                 continue

@@ -435,7 +435,7 @@ class ArcaneLabyrinthMixin(AFKJourneyBase, ABC):
             if difficulty is not None:
                 self.arcane_difficulty_was_visible = True
                 self.arcane_difficulty_not_visible_count = 0
-            sleep(0.1)
+            sleep(1.0)
 
             return True
 
@@ -502,7 +502,7 @@ class ArcaneLabyrinthMixin(AFKJourneyBase, ABC):
         """Handle Fitz's Shop."""
         purchase_count = 0
         while True:
-            _ = self.wait_for_any_template(
+            result = self.wait_for_any_template(
                 templates=[
                     "arcane_labyrinth/move_forward.png",
                     "arcane_labyrinth/select_a_crest.png",
@@ -511,18 +511,7 @@ class ArcaneLabyrinthMixin(AFKJourneyBase, ABC):
                 threshold=ConfidenceValue("70%"),
                 timeout=20,
             )
-
             sleep(1)
-            result = self.find_any_template(
-                [
-                    "arcane_labyrinth/move_forward.png",
-                    "arcane_labyrinth/select_a_crest.png",
-                ],
-                crop_regions=CropRegions(top=0.7),
-                threshold=ConfidenceValue("70%"),
-            )
-            if result is None:
-                break
 
             purchase_limit = 2
             match result.template:
