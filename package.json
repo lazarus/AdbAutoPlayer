@@ -33,6 +33,13 @@
   },
   "license": "MIT",
   "name": "adb-auto-player",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "core-js",
+      "esbuild",
+      "protobufjs"
+    ]
+  },
   "scripts": {
     "build": "vite build",
     "bundle-templates": "node scripts/bundle-templates.cjs",
@@ -43,9 +50,6 @@
     "pytauri": "node scripts/pytauri-bootstrap.cjs",
     "set-version": "node scripts/set-version.cjs",
     "tauri": "tauri"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": ["core-js", "esbuild", "protobufjs"]
   },
   "type": "module",
   "version": "0.0.0"
