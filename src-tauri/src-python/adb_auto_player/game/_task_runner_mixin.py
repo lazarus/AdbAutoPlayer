@@ -95,9 +95,6 @@ class TaskRunnerMixin(TemplateMixin):
         if not error:
             return
 
-        if isinstance(error, KeyboardInterrupt):
-            raise KeyboardInterrupt
-
         if isinstance(error, cv2.error):
             if self._stream:
                 logging.error(

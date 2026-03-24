@@ -423,12 +423,7 @@ class AFKJourneyBase(Navigation, Game):
         if not excluded_heroes_dict:
             return None
 
-        filtered_dict = {}
-
-        for key, value in excluded_heroes_dict.items():
-            filtered_dict[key] = value
-
-        return self._find_any_excluded_hero(filtered_dict)
+        return self._find_any_excluded_hero(excluded_heroes_dict)
 
     def _find_any_excluded_hero(self, excluded_heroes: dict[str, str]) -> str | None:
         """Find excluded hero templates.
