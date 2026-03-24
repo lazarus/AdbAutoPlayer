@@ -364,7 +364,6 @@ class TemplateMixin(InputMixin):
         delay: float = 0.5,
         timeout: float = 30,
         timeout_message: str | None = None,
-        ensure_order: bool = True,
     ) -> TemplateMatchResult:
         """Waits for any template to appear on the screen.
 
@@ -388,20 +387,8 @@ class TemplateMixin(InputMixin):
                 f"None of the templates {templates} were found after {timeout} seconds"
             )
 
-        result = self._execute_or_timeout(
-            find_template, delay=delay, timeout=timeout, timeout_message=timeout_message
-        )
-
-        # Should not be needed anymore because find_any_template reuses the screenshot
-        # during a single iteration
-        if not ensure_order:
-            return result
-
-        # this ensures correct order
-        # using lower delay and timeout as this function should return without a retry.
-        sleep(delay)
         return self._execute_or_timeout(
-            find_template, delay=0.5, timeout=3, timeout_message=timeout_message
+            find_template, delay=delay, timeout=timeout, timeout_message=timeout_message
         )
 
     def _tap_till_template_disappears(

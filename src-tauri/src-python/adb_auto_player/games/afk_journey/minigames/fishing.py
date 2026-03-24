@@ -165,7 +165,6 @@ class Fishing(AFKJourneyBase):
                 templates=fish_caught_templates + general_templates,
                 timeout=self.MIN_TIMEOUT,
                 threshold=ConfidenceValue("70%"),
-                ensure_order=True,
                 crop_regions=CropRegions(
                     bottom="20%",
                 ),
@@ -206,7 +205,6 @@ class Fishing(AFKJourneyBase):
             timeout=self.MIN_TIMEOUT,
             delay=0.1,
             threshold=ConfidenceValue("70%"),
-            ensure_order=False,
         )
 
     def get_fishing_rod_button(self) -> Coordinates:
@@ -260,7 +258,6 @@ class Fishing(AFKJourneyBase):
                 timeout=5,
                 delay=FISHING_DELAY,
                 threshold=ConfidenceValue("60%"),
-                ensure_order=False,
             )
         except GameTimeoutError:
             logging.info("Small fish caught.")
