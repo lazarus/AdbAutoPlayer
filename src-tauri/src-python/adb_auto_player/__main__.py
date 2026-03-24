@@ -88,7 +88,7 @@ def tauri_profile_aware_command(func):
         if not _base_resource_dir:
             _base_resource_dir = Manager.path(app_handle).resource_dir()
             # Tauri Dev
-            if _base_resource_dir.parts[-3:] == ("AdbAutoPlayer", "target", "debug"):
+            if _base_resource_dir.parts[-2:] == ("target", "debug"):
                 _base_resource_dir = (
                     _base_resource_dir.parent.parent
                     / "src-tauri"
