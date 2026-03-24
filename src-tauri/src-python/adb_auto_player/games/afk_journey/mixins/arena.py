@@ -15,6 +15,10 @@ from adb_auto_player.models.image_manipulation import CropRegions
 class ArenaMixin(AFKJourneyBase):
     """Arena Mixin."""
 
+    # UI coordinates
+    NOTICE_DISMISS_TAP = Point(380, 1890)
+    CANCEL_PURCHASE_FALLBACK = Point(550, 1790)
+
     @register_command(
         name="Arena",
         gui=GUIMetadata(
@@ -54,7 +58,7 @@ class ArenaMixin(AFKJourneyBase):
         """Enter Arena."""
         logging.info("Entering Arena...")
         self.navigate_to_world()
-        self.tap(Point(460, 1830))  # Battle Modes
+        self.tap(self.BATTLE_MODES_POINT)  # Battle Modes
         try:
             arena_mode = self.wait_for_template(
                 "arena/label.png",
@@ -82,7 +86,7 @@ class ArenaMixin(AFKJourneyBase):
                 timeout=self.MIN_TIMEOUT,
                 timeout_message="No notices found.",
             )
-            self.tap(Point(380, 1890))
+            self.tap(self.NOTICE_DISMISS_TAP)
             sleep(4)
 
             return True
@@ -177,7 +181,7 @@ class ArenaMixin(AFKJourneyBase):
             (
                 self.tap(cancel)
                 if cancel
-                else self.tap(Point(550, 1790))  # Cancel fallback
+                else self.tap(self.CANCEL_PURCHASE_FALLBACK)  # Cancel fallback
             )
 
             return False

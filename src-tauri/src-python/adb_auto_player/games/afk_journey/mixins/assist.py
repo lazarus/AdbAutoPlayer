@@ -16,6 +16,11 @@ from adb_auto_player.models.template_matching import TemplateMatchResult
 class AssistMixin(AFKJourneyBase):
     """Assist Mixin."""
 
+    # UI coordinates
+    CLOSE_PROFILE_TAP = Point(550, 100)
+    SYNERGY_HERO_PICK_TAP = Point(130, 900)
+    SYNERGY_CONFIRM_TAP = Point(630, 1800)
+
     @register_command(
         name="AssistSynergyAndCC",
         gui=GUIMetadata(
@@ -97,7 +102,7 @@ class AssistMixin(AFKJourneyBase):
                 is None
             ):
                 # Back button does not always close profile/chat windows
-                self.tap(Point(550, 100))
+                self.tap(self.CLOSE_PROFILE_TAP)
                 sleep(1)
             return False
         self.tap(result)
@@ -184,8 +189,8 @@ class AssistMixin(AFKJourneyBase):
             return False
         self.tap(go)
         sleep(3)
-        self.tap(Point(130, 900))
+        self.tap(self.SYNERGY_HERO_PICK_TAP)
         sleep(1)
-        self.tap(Point(630, 1800))
+        self.tap(self.SYNERGY_CONFIRM_TAP)
         logging.info("Synergy complete")
         return True

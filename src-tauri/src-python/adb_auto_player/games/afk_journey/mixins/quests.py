@@ -15,6 +15,15 @@ from adb_auto_player.models.geometry import Point
 class QuestMixin(AFKJourneyBase, ABC):
     """Assist Mixin."""
 
+    # UI coordinates
+    QUEST_HOLD_TAP = Point(550, 1200)
+    QUEST_POPUP_CLOSE_TAP = Point(550, 1825)
+    QUEST_PATH_AWAY_TAP = Point(880, 365)
+    QUEST_AUTOPATH_TAP = Point(820, 375)
+    QUEST_TIME_CHANGE_TAP = Point(550, 1500)
+    QUEST_OUTFIT_CONFIRM_TAP = Point(730, 1800)
+    QUEST_OUTFIT_BACK_TAP = Point(100, 1800)
+
     @register_command(
         name="RunQuests",
         gui=GUIMetadata(
@@ -72,7 +81,7 @@ class QuestMixin(AFKJourneyBase, ABC):
                     self.tap(farewell, scale=True)
                     sleep(2)
                     # Manually path away from the dialogue
-                    self.tap(Point(880, 365))
+                    self.tap(self.QUEST_PATH_AWAY_TAP)
                     sleep(2)  # Long wait to path before we check for quest images
                     count = 0
 
@@ -84,7 +93,7 @@ class QuestMixin(AFKJourneyBase, ABC):
                 if not homestead_button:
                     # Attempt to close any full screen flavour text
                     logging.info("Clearing full screen popup")
-                    self.tap(Point(550, 1825))
+                    self.tap(self.QUEST_POPUP_CLOSE_TAP)
                     sleep(2)
 
                 if homestead_button and not farewell:
@@ -146,7 +155,7 @@ class QuestMixin(AFKJourneyBase, ABC):
                 "Holding button: "
                 + result.template.split("/")[-1].replace("_", " ").capitalize()
             )
-            self.hold(Point(550, 1200))
+            self.hold(self.QUEST_HOLD_TAP)
             return True
 
         # Then we check for buttons we need to press, higher threshold as
@@ -175,18 +184,18 @@ class QuestMixin(AFKJourneyBase, ABC):
 
         if self.find_any_template(["quests/time_change"]):
             logging.info("Changing time")
-            self.tap(Point(550, 1500))
+            self.tap(self.QUEST_TIME_CHANGE_TAP)
             return True
 
         if self.find_any_template(["confirm_text_italic"]):
             logging.info("Changing outfit")
-            self.tap(Point(730, 1800))
+            self.tap(self.QUEST_OUTFIT_CONFIRM_TAP)
 
             confirm = self.game_find_template_match(template="navigation/confirm")
             if confirm:
                 self.tap(confirm)
                 sleep(2)
-                self.tap(Point(100, 1800))
+                self.tap(self.QUEST_OUTFIT_BACK_TAP)
                 sleep(2)
             return True
 
@@ -195,7 +204,7 @@ class QuestMixin(AFKJourneyBase, ABC):
         if path:
             if self.find_any_template(["quests/questbook"]):
                 logging.info("Auto-pathing")
-                self.tap(Point(820, 375))
+                self.tap(self.QUEST_AUTOPATH_TAP)
                 sleep(5)
                 return False
 

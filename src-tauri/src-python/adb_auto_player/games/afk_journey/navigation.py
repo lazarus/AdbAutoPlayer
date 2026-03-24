@@ -33,6 +33,8 @@ class Navigation(PopupMessageHandler, ABC):
     CENTER_POINT = Point(x=1080 // 2, y=1920 // 2)
     RESONATING_HALL_POINT = Point(x=620, y=1830)
     BATTLE_MODES_POINT = Point(x=460, y=1830)
+    ARCANE_CREST_BOTTOM_TAP = Point(550, 1460)
+    AFK_STAGES_REWARDS_POPUP_TAP = Point(x=550, y=1080)
 
     def navigate_to_world(self) -> None:
         """Navigate to world view. Previously default_state.
@@ -126,7 +128,7 @@ class Navigation(PopupMessageHandler, ABC):
                 self.press_back_button()
                 sleep(1)
             case "arcane_labyrinth/select_a_crest.png":
-                self.tap(Point(550, 1460))  # bottom crest
+                self.tap(self.ARCANE_CREST_BOTTOM_TAP)  # bottom crest
                 sleep(1)
                 self.tap(result)
                 sleep(1)
@@ -271,7 +273,7 @@ class Navigation(PopupMessageHandler, ABC):
             crop_regions=CropRegions(left=0.3, right=0.3, top=0.9),
             timeout=self.NAVIGATION_TIMEOUT,
         )
-        self.tap(Point(x=550, y=1080))  # click rewards popup
+        self.tap(self.AFK_STAGES_REWARDS_POPUP_TAP)  # click rewards popup
         sleep(1)
 
     def _navigate_to_battle_modes_screen(self) -> None:

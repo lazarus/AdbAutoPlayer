@@ -115,7 +115,7 @@ class DreamRealmMixin(AFKJourneyBase):
         """Enter Dream Realm."""
         logging.info("Entering Dream Realm...")
         self.navigate_to_world()
-        self.tap(Point(460, 1830))  # Battle Modes
+        self.tap(self.BATTLE_MODES_POINT)  # Battle Modes
         try:
             dr_mode = self.wait_for_template(
                 "dream_realm/label.png",

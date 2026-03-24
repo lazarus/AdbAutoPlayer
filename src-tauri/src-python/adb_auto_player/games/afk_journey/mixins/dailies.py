@@ -29,6 +29,22 @@ class DailiesMixin(
 ):
     """Dailies Mixin."""
 
+    # UI coordinates
+    AFK_PROGRESS_BUTTON = Point(90, 1830)
+    CLAIM_REWARDS_TAP = Point(520, 1420)
+    MYSTICAL_HOUSE_BUTTON = Point(310, 1840)
+    PURCHASE_BUTTON = Point(600, 1780)
+    CLOSE_WINDOW_TAP = Point(550, 100)
+    HAMBURGER_MENU_BUTTON = Point(990, 1840)
+    CLOSE_CONFIRMATION_TAP = Point(540, 1620)
+    DAILY_QUEST_CLAIM_TAP = Point(370, 180)
+    DAILY_QUEST_CLOSE_TAP = Point(530, 1740)
+    GUILD_QUESTS_TAB = Point(830, 1670)
+    AFFINITY_FIRST_HERO_TAP = Point(130, 1040)
+    AFFINITY_HERO_CLICK = Point(540, 840)
+    AFFINITY_NEXT_HERO = Point(995, 1090)
+    ESSENCE_SWAP_CLOSE_TAP = Point(550, 200)
+
     def __init__(self) -> None:
         """Initialize Dailies Mixin."""
         super().__init__()
@@ -72,12 +88,12 @@ class DailiesMixin(
     def claim_daily_rewards(self) -> None:
         """Claim daily AFK rewards."""
         logging.debug("Open AFK Progress.")
-        self.tap(Point(90, 1830))
+        self.tap(self.AFK_PROGRESS_BUTTON)
         sleep(4)
 
         logging.info("Claim AFK rewards twice for battle pass.")
         for _ in range(4):
-            self.tap(Point(520, 1420))
+            self.tap(self.CLAIM_REWARDS_TAP)
             sleep(self.FAST_TIMEOUT)
 
         logging.info("Looking for free hourglasses.")
@@ -118,7 +134,7 @@ class DailiesMixin(
         """Purchase single pull and optionally affinity items."""
         logging.info("Entering Mystical House...")
         self.navigate_to_world()
-        self.tap(Point(310, 1840))
+        self.tap(self.MYSTICAL_HOUSE_BUTTON)
 
         try:
             logging.debug("Opening Emporium.")
@@ -178,7 +194,7 @@ class DailiesMixin(
 
         self._click_confirm_on_popup()
         sleep(1)
-        self.tap(Point(550, 100))  # Close purchased window
+        self.tap(self.CLOSE_WINDOW_TAP)  # Close purchased window
 
     def _buy_affinity_items(self) -> None:
         """Buy affinity items."""
@@ -212,9 +228,9 @@ class DailiesMixin(
             logging.info("Attempting to buy the discount affinity item.")
             self.tap(discount_affinity)
             sleep(1)
-            self.tap(Point(600, 1780))  # Purchase
+            self.tap(self.PURCHASE_BUTTON)  # Purchase
             sleep(1)
-            self.tap(Point(550, 100))  # Close purchased window
+            self.tap(self.CLOSE_WINDOW_TAP)  # Close purchased window
             sleep(1)
         else:
             # TODO: Unreachable. Template matches even when it's grayed out (sold out).
@@ -233,9 +249,9 @@ class DailiesMixin(
         for affinity_item in other_affinity_items:
             self.tap(affinity_item)
             sleep(1)
-            self.tap(Point(600, 1780))  # Purchase
+            self.tap(self.PURCHASE_BUTTON)  # Purchase
             sleep(1)
-            self.tap(Point(550, 100))  # Close purchased window
+            self.tap(self.CLOSE_WINDOW_TAP)  # Close purchased window
             sleep(1)
 
     def _buy_bound_essence(self) -> None:
@@ -280,9 +296,9 @@ class DailiesMixin(
             logging.info(f"Buying essence {i + 1}.")
             self.tap(essence)
             sleep(1)
-            self.tap(Point(600, 1780))  # Purchase
+            self.tap(self.PURCHASE_BUTTON)  # Purchase
             sleep(1)
-            self.tap(Point(550, 100))  # Close purchased window
+            self.tap(self.CLOSE_WINDOW_TAP)  # Close purchased window
             sleep(1)
 
             self.perform_essence_swap = True
@@ -352,7 +368,7 @@ class DailiesMixin(
         self.navigate_to_world()
 
         logging.info("Navigating to Hamburger.")
-        self.tap(Point(990, 1840))
+        self.tap(self.HAMBURGER_MENU_BUTTON)
         sleep(1)
 
         self._claim_friend_rewards()
@@ -384,7 +400,7 @@ class DailiesMixin(
             )
             self.tap(send_receive)
             sleep(self.FAST_TIMEOUT)
-            self.tap(Point(540, 1620))  # Close confirmation
+            self.tap(self.CLOSE_CONFIRMATION_TAP)  # Close confirmation
             sleep(1)
         except GameTimeoutError as fail:
             logging.info(f"{fail} {self.LANG_ERROR}")
@@ -419,7 +435,7 @@ class DailiesMixin(
             )
             self.tap(read_all)
             sleep(1)
-            self.tap(Point(540, 1620))  # Close confirmation
+            self.tap(self.CLOSE_CONFIRMATION_TAP)  # Close confirmation
             sleep(1)
         except GameTimeoutError as fail:
             logging.info(fail)
@@ -476,13 +492,13 @@ class DailiesMixin(
 
         logging.info("Claim Daily Quest rewards.")
         self._quick_claim()
-        self.tap(Point(370, 180))  # Claim top row
+        self.tap(self.DAILY_QUEST_CLAIM_TAP)  # Claim top row
         sleep(self.FAST_TIMEOUT)
-        self.tap(Point(530, 1740))  # Close confirmation
+        self.tap(self.DAILY_QUEST_CLOSE_TAP)  # Close confirmation
         sleep(self.FAST_TIMEOUT)
 
         logging.info("Claim Guild Quest rewards.")
-        self.tap(Point(830, 1670))  # Guild Quests
+        self.tap(self.GUILD_QUESTS_TAB)  # Guild Quests
         sleep(self.FAST_TIMEOUT)
         self._quick_claim()
 
@@ -496,7 +512,7 @@ class DailiesMixin(
 
         self.tap(claim)
         sleep(self.FAST_TIMEOUT)
-        self.tap(Point(540, 1620))  # Close confirmation
+        self.tap(self.CLOSE_CONFIRMATION_TAP)  # Close confirmation
         sleep(self.FAST_TIMEOUT)
 
     ############################# Resonating Hall ##############################
@@ -507,11 +523,11 @@ class DailiesMixin(
         sleep(5)
 
         logging.debug("Open Resonating Hall.")
-        self.tap(Point(620, 1830))
+        self.tap(self.RESONATING_HALL_POINT)
         sleep(5)
 
         logging.info("Begin raising hero affinity.")
-        self.tap(Point(130, 1040))
+        self.tap(self.AFFINITY_FIRST_HERO_TAP)
         sleep(5)
 
         while not self.game_find_template_match("dailies/resonating_hall/chippy.png"):
@@ -528,14 +544,14 @@ class DailiesMixin(
         for _ in range(3):
             # NOTE: Sometimes spam click works and other times not.
             # So we go with the safe route of click then back.
-            self.tap(Point(540, 840))
+            self.tap(self.AFFINITY_HERO_CLICK)
             sleep(0.25)
-            self.tap(Point(540, 840))  # Mitigate missed click when low frames
+            self.tap(self.AFFINITY_HERO_CLICK)  # Mitigate missed click when low frames
             sleep(0.25)
             self.tap(back_button)
             sleep(0.5)
 
-        self.tap(Point(995, 1090))  # Next hero
+        self.tap(self.AFFINITY_NEXT_HERO)  # Next hero
         sleep(1)
 
     def swap_essences(self) -> None:
@@ -552,7 +568,7 @@ class DailiesMixin(
         self.navigate_to_world()
         sleep(5)
         logging.debug("Open Resonating Hall.")
-        self.tap(Point(620, 1830))
+        self.tap(self.RESONATING_HALL_POINT)
         sleep(5)
 
         logging.info("Begin swapping essences...")
@@ -607,7 +623,7 @@ class DailiesMixin(
             return False
 
         logging.debug("Closing swapped results window.")
-        self.tap(Point(550, 200))
+        self.tap(self.ESSENCE_SWAP_CLOSE_TAP)
         sleep(self.FAST_TIMEOUT)
 
         logging.debug("Leave weapon and hero view.")
