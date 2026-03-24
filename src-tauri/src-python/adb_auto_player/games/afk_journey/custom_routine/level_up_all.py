@@ -19,7 +19,8 @@ class LevelUpAllHeroes(AFKJourneyBase):
         logging.info("Starting Level Up All Heroes.")
         self.navigate_to_resonating_hall()
 
-        if self._find_level_up_all_button() is None:
+        level_up_all_button = self._find_level_up_all_button()
+        if level_up_all_button is None:
             logging.info(
                 "Level Up All Heroes not available.",
                 extra={"preset": LogPreset.NOT_AVAILABLE},
@@ -27,7 +28,7 @@ class LevelUpAllHeroes(AFKJourneyBase):
             return
 
         logging.info("Clicking Level Up All Heroes.")
-        if level_up_all_button := self._find_level_up_all_button():
+        if level_up_all_button:
             for _ in range(3):
                 for _ in range(10):
                     self.tap(level_up_all_button, blocking=False, log=False)

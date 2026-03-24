@@ -206,9 +206,9 @@ class TitanReaverProxyBattleMixin(AFKJourneyBase):
 
         for template, description in battle_steps:
             if description in ("confirm button", "final confirm button"):
-                # Special handling for confirm button
-                if not self._wait_and_tap_template(template, description):
-                    continue
+                # Optional popup — present on some runs, absent on others
+                self._wait_and_tap_template(template, description)
+                continue
             if not self._wait_and_tap_template(template, description):
                 return False
 

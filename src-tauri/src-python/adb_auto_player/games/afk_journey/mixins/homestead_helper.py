@@ -291,12 +291,12 @@ class HomesteadHelperMixin(AFKJourneyBase):
         )
         sleep(initial_wait)
 
-        while True:
-            if self.game_find_template_match(
-                template=self.CRAFTING_DECK_TEMPLATE,
-            ):
-                return
-            sleep(3)
+        self.wait_for_template(
+            template=self.CRAFTING_DECK_TEMPLATE,
+            delay=3.0,
+            timeout=120,
+            timeout_message="Crafting deck did not appear after 120 seconds",
+        )
 
     def _return_to_requests_list(self) -> None:
         self.press_back_button()

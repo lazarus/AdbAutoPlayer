@@ -85,19 +85,13 @@ class ArcaneLabyrinthMixin(AFKJourneyBase, ABC):
                     continue
             break
 
-        _ = self.wait_for_template(
+        hold_to_exit = self.wait_for_template(
             "arcane_labyrinth/hold_to_exit.png",
             crop_regions=CropRegions(right=0.5, top=0.5, bottom=0.3),
             timeout_message="Failed to exit Arcane Labyrinth run",
             timeout=self.MIN_TIMEOUT,
         )
         sleep(1)
-        hold_to_exit = self.wait_for_template(
-            "arcane_labyrinth/hold_to_exit.png",
-            crop_regions=CropRegions(right=0.5, top=0.5, bottom=0.3),
-            timeout_message="Failed to exit Arcane Labyrinth run",
-            timeout=self.FAST_TIMEOUT,
-        )
         self.hold(hold_to_exit, duration=5.0)
 
     def _add_keys_farmed(self, keys: int) -> None:

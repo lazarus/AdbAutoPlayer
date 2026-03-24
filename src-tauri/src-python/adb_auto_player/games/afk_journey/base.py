@@ -490,7 +490,6 @@ class AFKJourneyBase(Navigation, Game):
         max_count = 10
         count = 0
         while self._click_confirm_on_popup() and count < max_count:
-            self._click_confirm_on_popup()
             count += 1
             sleep(0.5)
         return True
