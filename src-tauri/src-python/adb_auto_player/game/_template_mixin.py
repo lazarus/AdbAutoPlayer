@@ -440,12 +440,12 @@ class TemplateMixin(InputMixin):
         threshold: ConfidenceValue | None = None,
         grayscale: bool = False,
         crop_regions: CropRegions | None = None,
-        scale: bool = False,  # TODO remove later
-        delay: float = 10.0,
+        tap_delay: float = 10.0,
+        sleep_duration: float = 0.5,
     ) -> None:
         max_tap_count = 3
         tap_count = 0
-        time_since_last_tap = delay  # force immediate first tap
+        time_since_last_tap = tap_delay  # force immediate first tap
         while self.game_find_template_match(
             template=template,
             threshold=threshold,
@@ -458,12 +458,14 @@ class TemplateMixin(InputMixin):
                     f"Template: {template} still visible."
                 )
                 raise GameActionFailedError(message)
-            if time_since_last_tap >= delay:
+            if time_since_last_tap >= tap_delay:
                 self.tap(coordinates)
                 tap_count += 1
-                time_since_last_tap -= delay  # preserve overflow - more accurate timing
-            sleep(0.5)
-            time_since_last_tap += 0.5
+                time_since_last_tap -= (
+                    tap_delay  # preserve overflow - more accurate timing
+                )
+            sleep(sleep_duration)
+            time_since_last_tap += sleep_duration
 
     def assert_frame_and_input_delay_below_threshold(
         self,

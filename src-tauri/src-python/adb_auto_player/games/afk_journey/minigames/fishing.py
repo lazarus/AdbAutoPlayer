@@ -236,7 +236,7 @@ class Fishing(AFKJourneyBase):
                     right="10%",
                     top="90%",
                 ),
-                delay=3.0,
+                tap_delay=3.0,
             )
 
         else:
