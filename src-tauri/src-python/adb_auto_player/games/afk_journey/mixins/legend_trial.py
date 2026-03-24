@@ -129,8 +129,7 @@ class SeasonLegendTrial(AFKJourneyBase):
                         logging.info(f"{self.battle_state.faction} Top Floor Reached")
                 return None
             logging.info(f"{self.battle_state.faction} Trials failed")
-            return None
-        return None
+            return
 
     def _select_legend_trials_floor(self) -> None:
         if not self.battle_state.faction:

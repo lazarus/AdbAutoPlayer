@@ -128,7 +128,7 @@ class FrostfireShowdownMixin(AFKJourneyBase, ABC):
             return
 
         while self._handle_battle():
-            self._handle_battle()
+            pass
 
         logging.info("Frostfire Showdown Finished!")
 
@@ -464,6 +464,13 @@ class FrostfireShowdownMixin(AFKJourneyBase, ABC):
                 logging.info("[Hero Selection] Hero selection reset")
                 return
 
+        # Store the selected heroes for failed-team tracking
+        self._last_selected_heroes = selected_hero_templates
+        logging.info(
+            f"[Hero Selection] Successfully selected all {hero_slots} heroes: "
+            f"{', '.join(selected_hero_names)}"
+        )
+
     def _process_single_hero(
         self,
         hero_checker: TemplateMatchResult,
@@ -518,13 +525,6 @@ class FrostfireShowdownMixin(AFKJourneyBase, ABC):
             available_heroes.remove(hero_checker.template)
 
             return "selected"
-
-        # Store the selected heroes for tracking failed teams
-        self._last_selected_heroes = selected_hero_templates
-        logging.info(
-            f"[Hero Selection] Successfully selected all {hero_slots} heroes: "
-            f"{', '.join(selected_hero_names)}"
-        )
 
     def _handle_battle_result(self) -> bool:
         result = self.wait_for_any_template(

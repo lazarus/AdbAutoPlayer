@@ -51,7 +51,7 @@ class SunlitShowdownMixin(AFKJourneyBase, ABC):
             return
 
         while self._handle_battle():
-            self._handle_battle()
+            pass
 
         logging.info("Sunlit Showdown Finished!")
 
