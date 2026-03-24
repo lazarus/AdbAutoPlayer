@@ -50,11 +50,17 @@ pub fn setup_task_completed_listener(app: &mut App) -> tauri::Result<()> {
                 builder = builder.body(message.clone());
             }
 
-            builder.show().unwrap();
+            if let Err(e) = builder.show() {
+                eprintln!("Failed to show desktop notification: {e}");
+            }
         }
 
-        let message = format!("Task Completed\n{}", message);
-        execute_discord_webhook(discord_webhook, message);
+        let discord_message = if message.is_empty() {
+            "Task Completed".to_string()
+        } else {
+            format!("Task Completed\n{}", message)
+        };
+        execute_discord_webhook(discord_webhook, discord_message);
     });
 
     Ok(())

@@ -181,7 +181,6 @@ pub fn save_app_settings(
     state: State<'_, Mutex<AppSettings>>,
 ) -> AppSettings {
     let path = get_app_settings_path(&app_handle);
-    println!("{}", path.display());
     AppSettings::save_to_file(&settings, &path).expect("Failed to save App Settings");
 
     let mut state = state.lock().unwrap();

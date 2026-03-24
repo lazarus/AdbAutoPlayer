@@ -26,12 +26,11 @@
     await invoke("show_window");
 
     const version = await getVersion();
-    console.log(version);
     await logInfo(`App Version: ${version}`);
     initPostHog(version);
   }
 
-  init();
+  init().catch((e) => console.error("Failed to initialise app:", e));
 
   onMount(() => {
     return setupExternalLinkHandler();

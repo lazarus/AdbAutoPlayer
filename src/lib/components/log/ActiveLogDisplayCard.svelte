@@ -91,7 +91,7 @@
           const logLevel: LogLevel = $appSettings?.logging?.level ?? "INFO";
 
           let alwaysLogDebug = false;
-          if (logMessage.profile_index) {
+          if (logMessage.profile_index != null) {
             alwaysLogDebug =
               $debugLogLevelOverwrite[logMessage.profile_index] ?? false;
           }

@@ -330,7 +330,7 @@
   async function updateState(profile: number | null = null) {
     const profileCount = $appSettings?.profiles?.profiles?.length ?? 1;
 
-    if (profile) {
+    if (profile !== null) {
       void getProfileState({
         profile_index: profile,
       });
