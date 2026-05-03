@@ -6,7 +6,10 @@
     appSettings,
     uiState,
   } from "$lib/stores";
-  import { onMount, onDestroy } from "svelte";
+  import { get } from "svelte/store";
+  import { onMount } from "svelte";
+  import { listen } from "@tauri-apps/api/event";
+  import { EventNames } from "$lib/log/eventNames";
   import type { MenuButton } from "$lib/menu/model";
 
   interface Props {
@@ -30,11 +33,15 @@
   let startTime = $state<number | null>(null);
   let elapsed = $state("00:00");
   let timer: ReturnType<typeof setInterval>;
+  let issueCount = $state(0);
+  let restartCount = $state(0);
 
   $effect(() => {
     if (activeTask) {
       if (!startTime) {
         startTime = Date.now();
+        issueCount = 0;
+        restartCount = 0;
       }
     } else {
       startTime = null;
@@ -54,10 +61,23 @@
 
   onMount(() => {
     timer = setInterval(updateTimer, 1000);
-  });
 
-  onDestroy(() => {
-    clearInterval(timer);
+    let logUnsub: (() => void) | undefined;
+    listen<any>(EventNames.LOG_MESSAGE, (event) => {
+      const msg = event.payload;
+      if (msg.profile_index !== get(activeProfile)) return;
+      if (!get(profileStates)[get(activeProfile)]?.active_task) return;
+      if (["WARNING", "ERROR", "FATAL"].includes(msg.level)) issueCount++;
+      if (typeof msg.message === "string" && /restart/i.test(msg.message))
+        restartCount++;
+    }).then((u) => {
+      logUnsub = u;
+    });
+
+    return () => {
+      clearInterval(timer);
+      logUnsub?.();
+    };
   });
 </script>
 
@@ -126,6 +146,18 @@
             <div class="stat-label">{$t("profile")}</div>
             <div class="stat-value">{profileName}</div>
           </div>
+          {#if restartCount > 0}
+            <div class="stat">
+              <div class="stat-label">{$t("restarts")}</div>
+              <div class="stat-value stat-warn">{restartCount}</div>
+            </div>
+          {/if}
+          {#if issueCount > 0}
+            <div class="stat">
+              <div class="stat-label">{$t("issues")}</div>
+              <div class="stat-value stat-err">{issueCount}</div>
+            </div>
+          {/if}
         </div>
       </div>
 
@@ -312,6 +344,14 @@
   .stat-value.big {
     font-size: 18px;
     font-weight: 600;
+  }
+
+  .stat-warn {
+    color: var(--warn);
+  }
+
+  .stat-err {
+    color: var(--err);
   }
 
   .stop-btn {

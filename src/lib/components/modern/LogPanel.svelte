@@ -159,6 +159,46 @@
 
   const isTaskRunning = $derived(!!$profileStates[profileIndex]?.active_task);
 
+  let hiddenLevels = $state(new Set<string>());
+
+  function toggleLevel(level: string) {
+    if (hiddenLevels.has(level)) {
+      hiddenLevels.delete(level);
+    } else {
+      hiddenLevels.add(level);
+    }
+    hiddenLevels = new Set(hiddenLevels);
+  }
+
+  const visibleEntries = $derived(
+    hiddenLevels.size === 0
+      ? currentEntries
+      : currentEntries.filter(
+          (e) => !hiddenLevels.has((e as any).level ?? "INFO"),
+        ),
+  );
+
+  // Resize state for bottom panel
+  let panelHeight = $state(250);
+
+  function startResize(e: MouseEvent) {
+    const startY = e.clientY;
+    const startH = panelHeight;
+
+    function onMove(e: MouseEvent) {
+      panelHeight = Math.max(
+        80,
+        Math.min(window.innerHeight * 0.6, startH + (startY - e.clientY)),
+      );
+    }
+    function onUp() {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    }
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }
+
   async function handleLogClick(event: MouseEvent) {
     const target = event.target as HTMLElement;
     const pathLink = target.closest(".path-link");
@@ -189,12 +229,33 @@
   class:collapsed
   class:compact={$uiState.taskViewVariant === "accordion"}
   data-position={position}
+  style={position === "bottom" && !collapsed
+    ? `height: ${panelHeight}px; flex-basis: ${panelHeight}px`
+    : ""}
 >
+  {#if position === "bottom" && !collapsed}
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="resize-handle" onmousedown={startResize}></div>
+  {/if}
   <div class="header">
     <span class="status-dot"></span>
     <div class="title">{$t("Live Log")}</div>
+    <div class="level-filters">
+      {#each ["INFO", "WARNING", "ERROR"] as lvl}
+        <button
+          class="lvl-btn"
+          class:dimmed={hiddenLevels.has(lvl)}
+          data-level={lvl}
+          onclick={() => toggleLevel(lvl)}
+          title={hiddenLevels.has(lvl) ? `Show ${lvl}` : `Hide ${lvl}`}
+          >{lvl === "WARNING" ? "WARN" : lvl}</button
+        >
+      {/each}
+    </div>
     <span class="spacer"></span>
-    <span class="count">{currentEntries.length} {$t("lines")}</span>
+    <span class="count"
+      >{visibleEntries.length}/{currentEntries.length} {$t("lines")}</span
+    >
     <button class="clear-btn" onclick={handleClear}>{$t("clear")}</button>
   </div>
 
@@ -208,11 +269,12 @@
       draggable="false"
     />
 
-    {#each currentEntries as entry}
-      <div class="log-line">
+    {#each visibleEntries as entry}
+      {@const lvl = (entry as any).level || "INFO"}
+      <div class="log-line" data-level={lvl}>
         <span class="time">{fmtTime(entry.timestamp)}</span>
-        <span class="level-tag" data-level={(entry as any).level || "INFO"}>
-          {(entry as any).level || "INFO"}
+        <span class="level-tag" data-level={lvl}>
+          {lvl}
         </span>
         <span class="message">
           {@html entry.message.replace(/^\[[A-Z]+\]\s*/, "")}
@@ -318,12 +380,68 @@
     line-height: 1.55;
   }
 
+  .resize-handle {
+    height: 4px;
+    cursor: ns-resize;
+    background: var(--line);
+    flex: 0 0 4px;
+    transition: background var(--dur-1);
+  }
+
+  .resize-handle:hover {
+    background: var(--accent);
+  }
+
+  .level-filters {
+    display: flex;
+    gap: 4px;
+    margin-left: 6px;
+  }
+
+  .lvl-btn {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    border: 1px solid;
+    border-radius: 4px;
+    padding: 1px 5px;
+    transition: opacity var(--dur-1);
+  }
+
+  .lvl-btn[data-level="INFO"] {
+    color: var(--accent-hi);
+    border-color: color-mix(in oklab, var(--accent-hi) 40%, transparent);
+  }
+
+  .lvl-btn[data-level="WARNING"] {
+    color: var(--warn);
+    border-color: color-mix(in oklab, var(--warn) 45%, transparent);
+  }
+
+  .lvl-btn[data-level="ERROR"] {
+    color: var(--err);
+    border-color: color-mix(in oklab, var(--err) 45%, transparent);
+  }
+
+  .lvl-btn.dimmed {
+    opacity: 0.3;
+  }
+
   .log-line {
     display: grid;
     grid-template-columns: 74px 62px 1fr;
     gap: 8px;
     padding: 2px 14px;
     min-width: 0;
+  }
+
+  .log-line[data-level="WARNING"] {
+    background: color-mix(in oklab, var(--warn) 6%, transparent);
+  }
+
+  .log-line[data-level="ERROR"],
+  .log-line[data-level="FATAL"] {
+    background: color-mix(in oklab, var(--err) 7%, transparent);
   }
 
   .time {

@@ -2,6 +2,7 @@
   import { t } from "$lib/i18n/i18n";
   import type { MenuButton } from "$lib/menu/model";
   import { uiState } from "$lib/stores";
+  import { getTaskIcon } from "$lib/utils/taskIcons";
 
   interface Props {
     buttons: MenuButton[];
@@ -12,6 +13,14 @@
   let { buttons, disableActions, categories }: Props = $props();
 
   let query = $state("");
+  let searchInput: HTMLInputElement;
+
+  function handleGlobalKeydown(e: KeyboardEvent) {
+    if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+      e.preventDefault();
+      searchInput?.focus();
+    }
+  }
 
   const filteredButtons = $derived(
     buttons.filter((b) =>
@@ -66,6 +75,8 @@
   }
 </script>
 
+<svelte:window onkeydown={handleGlobalKeydown} />
+
 <div class="task-grid-container">
   <div class="toolbar">
     <div class="search-box">
@@ -82,10 +93,30 @@
         ><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg
       >
       <input
+        bind:this={searchInput}
         bind:value={query}
         placeholder={$t("Search tasks...")}
         class="search-input"
+        onkeydown={(e) => {
+          if (e.key === "Escape") {
+            query = "";
+            (e.target as HTMLInputElement).blur();
+          }
+        }}
       />
+      {#if query}
+        <button class="search-clear" onclick={() => (query = "")} title="Clear">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            width="12"
+            height="12"><path d="M18 6 6 18M6 6l12 12" /></svg
+          >
+        </button>
+      {/if}
     </div>
 
     <div class="variant-toggle">
@@ -115,7 +146,22 @@
   </div>
 
   <div class="view-content">
-    {#if $uiState.taskViewVariant === "cards"}
+    {#if activeCategories.length === 0 && query}
+      <div class="empty-search">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          width="28"
+          height="28"
+          ><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg
+        >
+        <p>{$t("No tasks match")} <strong>"{query}"</strong></p>
+      </div>
+    {:else if $uiState.taskViewVariant === "cards"}
       <div class="cards-view">
         {#each activeCategories as cat}
           <section class="section">
@@ -123,13 +169,14 @@
               <div class="section-title">{$t(cat || "Other")}</div>
               <div class="section-line"></div>
               <div class="section-count">
-                {String(categorizedButtons[cat].length).padStart(2, "0")}
+                {categorizedButtons[cat].length}
               </div>
             </div>
             <div class="grid">
               {#each categorizedButtons[cat] as b}
                 {@const isDisabled =
                   disableActions && !b.isProcessRunning && !b.alwaysEnabled}
+                {@const icon = getTaskIcon(b.option.label)}
                 <button
                   class="task-card"
                   class:active={b.isProcessRunning}
@@ -141,6 +188,20 @@
                       : undefined}
                   onclick={b.callback}
                 >
+                  <div class="card-icon" style="--icon-color: {icon.color}">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      width="14"
+                      height="14"
+                    >
+                      <path d={icon.path} />
+                    </svg>
+                  </div>
                   <div class="card-top">
                     <div class="card-label">{$t(b.option.label)}</div>
                     {#if b.isProcessRunning}
@@ -171,12 +232,17 @@
           <div class="palette-section">
             <div class="palette-cat">{$t(cat || "Other")}</div>
             {#each categorizedButtons[cat] as b}
+              {@const isPaletteDisabled =
+                disableActions && !b.isProcessRunning && !b.alwaysEnabled}
               <button
                 class="palette-item"
                 class:active={b.isProcessRunning}
-                disabled={disableActions &&
-                  !b.isProcessRunning &&
-                  !b.alwaysEnabled}
+                disabled={isPaletteDisabled}
+                title={isPaletteDisabled
+                  ? $t("Stop the running task before starting another")
+                  : b.option.tooltip
+                    ? $t(b.option.tooltip)
+                    : undefined}
                 onclick={b.callback}
               >
                 <span class="item-icon">
@@ -239,9 +305,7 @@
               >
               <span class="acc-title">{$t(cat || "Other")}</span>
               <div class="spacer"></div>
-              <span class="acc-count"
-                >{String(categorizedButtons[cat].length).padStart(2, "0")}</span
-              >
+              <span class="acc-count">{categorizedButtons[cat].length}</span>
             </button>
             {#if isOpen}
               <div class="acc-content">
@@ -249,6 +313,7 @@
                   {#each categorizedButtons[cat] as b}
                     {@const isDisabled =
                       disableActions && !b.isProcessRunning && !b.alwaysEnabled}
+                    {@const icon = getTaskIcon(b.option.label)}
                     <button
                       class="task-card"
                       class:active={b.isProcessRunning}
@@ -260,6 +325,20 @@
                           : undefined}
                       onclick={b.callback}
                     >
+                      <div class="card-icon" style="--icon-color: {icon.color}">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="1.8"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          width="14"
+                          height="14"
+                        >
+                          <path d={icon.path} />
+                        </svg>
+                      </div>
                       <div class="card-top">
                         <div class="card-label">{$t(b.option.label)}</div>
                         {#if b.isProcessRunning}
@@ -319,6 +398,19 @@
 
   .search-icon {
     color: var(--text-3);
+  }
+
+  .search-clear {
+    color: var(--text-3);
+    display: grid;
+    place-items: center;
+    border-radius: 4px;
+    padding: 2px;
+    transition: color var(--dur-1);
+  }
+
+  .search-clear:hover {
+    color: var(--text-1);
   }
 
   .search-input {
@@ -419,12 +511,34 @@
     transition:
       transform var(--dur-1),
       border-color var(--dur-1),
-      background var(--dur-1);
+      background var(--dur-1),
+      box-shadow var(--dur-1);
     text-align: left;
+  }
+
+  .empty-search {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 60px 20px;
+    color: var(--text-4);
+  }
+
+  .empty-search p {
+    font-size: 13px;
+    color: var(--text-3);
+  }
+
+  .empty-search strong {
+    color: var(--text-2);
   }
 
   .task-card:not(:disabled):hover {
     border-color: color-mix(in oklab, var(--accent) 30%, var(--line));
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px color-mix(in oklab, var(--accent) 10%, transparent);
   }
 
   .task-card:disabled {
@@ -435,6 +549,17 @@
   .task-card.active {
     background: color-mix(in oklab, var(--accent) 10%, var(--bg-1));
     border-color: color-mix(in oklab, var(--accent) 45%, transparent);
+  }
+
+  .card-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    background: color-mix(in oklab, var(--icon-color) 15%, var(--bg-2));
+    color: var(--icon-color);
+    flex-shrink: 0;
   }
 
   .card-top {
