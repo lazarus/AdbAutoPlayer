@@ -433,6 +433,11 @@
     gap: 8px;
     padding: 2px 14px;
     min-width: 0;
+    transition: background var(--dur-1);
+  }
+
+  .log-line:hover {
+    background: var(--bg-hover);
   }
 
   .log-line[data-level="WARNING"] {

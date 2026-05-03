@@ -32,9 +32,12 @@
 
   let startTime = $state<number | null>(null);
   let elapsed = $state("00:00");
+  let elapsedSeconds = $state(0);
   let timer: ReturnType<typeof setInterval>;
   let issueCount = $state(0);
   let restartCount = $state(0);
+  let clearedCount = $state(0);
+  let failureCount = $state(0);
 
   $effect(() => {
     if (activeTask) {
@@ -42,16 +45,32 @@
         startTime = Date.now();
         issueCount = 0;
         restartCount = 0;
+        clearedCount = 0;
+        failureCount = 0;
       }
     } else {
       startTime = null;
       elapsed = "00:00";
+      elapsedSeconds = 0;
     }
   });
+
+  const perHour = $derived(
+    elapsedSeconds > 30 && clearedCount > 0
+      ? (clearedCount / elapsedSeconds) * 3600
+      : 0,
+  );
+
+  const successRate = $derived(
+    clearedCount + failureCount > 0
+      ? Math.round((clearedCount / (clearedCount + failureCount)) * 100)
+      : -1,
+  );
 
   function updateTimer() {
     if (!startTime) return;
     const s = Math.max(0, Math.floor((Date.now() - startTime) / 1000));
+    elapsedSeconds = s;
     const h = Math.floor(s / 3600);
     const m = Math.floor((s % 3600) / 60);
     const ss = s % 60;
@@ -67,9 +86,21 @@
       const msg = event.payload;
       if (msg.profile_index !== get(activeProfile)) return;
       if (!get(profileStates)[get(activeProfile)]?.active_task) return;
+      const text = typeof msg.message === "string" ? msg.message : "";
+
       if (["WARNING", "ERROR", "FATAL"].includes(msg.level)) issueCount++;
-      if (typeof msg.message === "string" && /restart/i.test(msg.message))
-        restartCount++;
+      if (/restart/i.test(text)) restartCount++;
+
+      // Generic completion patterns: "cleared: N", "completed N", "battle won"
+      if (/\bcleared:?\s*\d+/i.test(text)) clearedCount++;
+      else if (
+        /\b(completed|won|success)\b/i.test(text) &&
+        msg.level === "INFO"
+      )
+        clearedCount++;
+
+      // Generic failure patterns
+      if (/\b(failed|crashed|frozen|lost)\b/i.test(text)) failureCount++;
     }).then((u) => {
       logUnsub = u;
     });
@@ -146,6 +177,25 @@
             <div class="stat-label">{$t("profile")}</div>
             <div class="stat-value">{profileName}</div>
           </div>
+          {#if perHour > 0}
+            <div class="stat">
+              <div class="stat-label">{$t("per hour")}</div>
+              <div class="stat-value stat-ok">{perHour.toFixed(1)}</div>
+            </div>
+          {/if}
+          {#if successRate >= 0}
+            <div class="stat">
+              <div class="stat-label">{$t("success")}</div>
+              <div
+                class="stat-value"
+                class:stat-ok={successRate >= 90}
+                class:stat-warn={successRate >= 60 && successRate < 90}
+                class:stat-err={successRate < 60}
+              >
+                {successRate}%
+              </div>
+            </div>
+          {/if}
           {#if restartCount > 0}
             <div class="stat">
               <div class="stat-label">{$t("restarts")}</div>
@@ -352,6 +402,10 @@
 
   .stat-err {
     color: var(--err);
+  }
+
+  .stat-ok {
+    color: var(--ok);
   }
 
   .stop-btn {
