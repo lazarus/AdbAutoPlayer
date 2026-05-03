@@ -149,18 +149,17 @@ const iconMap: Array<{ keywords: string[]; icon: TaskIcon }> = [
   },
 
   // ===== Other / Routines =====
+  // Single entry for all user-defined routines (named "stages", "Custom Routine 2", etc).
+  // Must come AFTER afk-stages entries above so those win first.
   {
-    // Bare "stages" routine (no "afk") → layer-group, purple
-    // Must come AFTER afk-stages entries above so those win first.
-    keywords: ["stages", "stage", "progression"],
-    icon: {
-      color: "#a78bfa",
-      path: "M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5",
-    },
-  },
-  {
-    // Custom Routines → layer-group, slate
-    keywords: ["custom routine", "custom", "routine"],
+    keywords: [
+      "stages",
+      "stage",
+      "progression",
+      "custom routine",
+      "custom",
+      "routine",
+    ],
     icon: {
       color: "#94a3b8",
       path: "M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5",

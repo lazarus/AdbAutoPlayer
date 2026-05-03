@@ -329,7 +329,6 @@
       $uiState.settingsType = "adb";
       $uiState.showSettings = true;
     }}
-    onDebug={callDebug}
     sidebarOpen={$uiState.sidebarOpen}
     logOpen={$uiState.logOpen}
     onCustomizer={() => ($uiState.customizerOpen = !$uiState.customizerOpen)}
@@ -354,26 +353,14 @@
         role="presentation"
       >
         <div class="settings-header">
-          {#if settingsProps.type === "adb" && adbQuickActions.length > 0}
-            <div class="quick-actions">
-              <div class="quick-actions-title">{$t("Display Utilities")}</div>
-              <div class="quick-actions-grid">
-                {#each adbQuickActions as action}
-                  <button
-                    class="action-btn"
-                    onclick={() => handleQuickAction(action)}
-                  >
-                    {action.label}
-                  </button>
-                {/each}
-              </div>
-            </div>
-          {/if}
-
-          <div class="settings-actions">
+          <div class="settings-title">
             {settingsProps.fileName === "App.toml"
               ? $t("App Settings")
-              : $t("Settings")}
+              : settingsProps.type === "adb"
+                ? $t("ADB Settings")
+                : settingsProps.type === "game"
+                  ? $t("Game Settings")
+                  : $t("Settings")}
           </div>
           <button
             class="close-btn"
@@ -392,6 +379,37 @@
             >
           </button>
         </div>
+        {#if settingsProps.type === "adb"}
+          <div class="quick-actions">
+            {#if adbQuickActions.length > 0}
+              <div class="quick-actions-title">{$t("Display Utilities")}</div>
+              <div class="quick-actions-grid">
+                {#each adbQuickActions as action}
+                  <button
+                    class="action-btn"
+                    onclick={() => handleQuickAction(action)}
+                  >
+                    {action.label}
+                  </button>
+                {/each}
+              </div>
+            {/if}
+            <div class="quick-actions-title" style="margin-top: 16px;">
+              {$t("Debug")}
+            </div>
+            <div class="quick-actions-grid">
+              <button
+                class="action-btn"
+                onclick={() => {
+                  callDebug();
+                  closeSettings();
+                }}
+              >
+                {$t("Run Debug Routine")}
+              </button>
+            </div>
+          </div>
+        {/if}
         <div class="settings-body">
           <SchemaForm bind:settingsProps {onFormSubmit} />
         </div>
@@ -489,19 +507,25 @@
   }
 
   .settings-header {
-    padding: 16px 20px;
+    padding: 14px 20px;
     border-bottom: 1px solid var(--line);
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     background: var(--bg-2);
   }
 
+  .settings-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-1);
+  }
+
   .quick-actions {
-    margin-bottom: 24px;
-    padding: 16px;
-    background: var(--bg-2);
-    border: 1px solid var(--line);
-    border-radius: 12px;
+    padding: 14px 20px;
+    background: var(--bg-1);
+    border-bottom: 1px solid var(--line);
   }
 
   .quick-actions-title {
@@ -536,15 +560,6 @@
     border-color: var(--accent);
     color: var(--accent);
     background: var(--accent-ghost);
-  }
-
-  .settings-actions {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--text-1);
   }
 
   .settings-body {

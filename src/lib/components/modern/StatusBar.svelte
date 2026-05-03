@@ -15,7 +15,6 @@
     onAppSettings: () => void;
     onGameSettings: () => void;
     onAdbSettings: () => void;
-    onDebug: () => void;
     onCustomizer: () => void;
     sidebarOpen: boolean;
     logOpen: boolean;
@@ -29,7 +28,6 @@
     onAppSettings,
     onGameSettings,
     onAdbSettings,
-    onDebug,
     onCustomizer,
     sidebarOpen,
     logOpen,
@@ -168,29 +166,8 @@
     >
   </button>
 
-  <button class="icon-btn" title={$t("Debug Routine")} onclick={onDebug}>
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="1.7"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      width="16"
-      height="16"
-      ><path d="m8 2 1.88 1.88" /><path d="M14.12 3.88 16 2" /><path
-        d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"
-      /><path
-        d="M12 20c-3.31 0-6-2.69-6-6v-1h4v2h4v-2h4v1c0 3.31-2.69 6-6 6Z"
-      /><path d="M6 13V9c0-3.31 2.69-6 6-6s6 2.69 6 6v4H6Z" /><path
-        d="M2 13h4"
-      /><path d="M18 13h4" /><path d="m4.5 18 2.5-2.5" /><path
-        d="m17 15.5 2.5 2.5"
-      /></svg
-    >
-  </button>
-
   <button class="icon-btn" title={$t("ADB Settings")} onclick={onAdbSettings}>
+    <!-- Smartphone with screen separator + home indicator -->
     <svg
       viewBox="0 0 24 24"
       fill="none"
@@ -200,13 +177,14 @@
       stroke-linejoin="round"
       width="16"
       height="16"
-      ><rect x="5" y="2" width="14" height="20" rx="2" ry="2" /><path
-        d="M12 18h.01"
-      /></svg
+      ><rect x="6" y="2" width="12" height="20" rx="2.5" /><path
+        d="M9 6h6"
+      /><path d="M11 18h2" /></svg
     >
   </button>
 
   <button class="icon-btn" title={$t("Game Settings")} onclick={onGameSettings}>
+    <!-- Gamepad: D-pad on left + face buttons on right -->
     <svg
       viewBox="0 0 24 24"
       fill="none"
@@ -216,21 +194,25 @@
       stroke-linejoin="round"
       width="16"
       height="16"
-      ><line x1="6" y1="12" x2="10" y2="12"></line><line
-        x1="8"
-        y1="10"
-        x2="8"
-        y2="14"
-      ></line><line x1="15" y1="13" x2="15.01" y2="13"></line><line
-        x1="18"
-        y1="11"
-        x2="18.01"
-        y2="11"
-      ></line><rect x="2" y="6" width="20" height="12" rx="2"></rect></svg
+      ><path d="M6 11h4M8 9v4" /><circle
+        cx="15"
+        cy="13"
+        r="0.7"
+        fill="currentColor"
+        stroke="none"
+      /><circle
+        cx="18"
+        cy="11"
+        r="0.7"
+        fill="currentColor"
+        stroke="none"
+      /><path
+        d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258A4 4 0 0 0 17.32 5z"
+      /></svg
     >
   </button>
 
-  <button class="icon-btn" title={$t("App settings")} onclick={onAppSettings}>
+  <button class="icon-btn" title={$t("App Settings")} onclick={onAppSettings}>
     <svg
       viewBox="0 0 24 24"
       fill="none"
