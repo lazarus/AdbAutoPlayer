@@ -9,7 +9,6 @@
     appSettings,
     debugLogLevelOverwrite,
     profileStates,
-    uiState,
   } from "$lib/stores";
   import { EventNames } from "$lib/log/eventNames";
   import {
@@ -227,7 +226,6 @@
 <div
   class="log-panel"
   class:collapsed
-  class:compact={$uiState.taskViewVariant === "list"}
   data-position={position}
   style={position === "bottom" && !collapsed
     ? `height: ${panelHeight}px; flex-basis: ${panelHeight}px`
@@ -500,26 +498,6 @@
     font-style: italic;
   }
 
-  /* Compact Mode Styles */
-  .log-panel.compact[data-position="bottom"] {
-    height: 160px;
-    flex: 0 0 160px;
-  }
-
-  .log-panel.compact[data-position="bottom"] .header {
-    padding: 6px 14px;
-  }
-
-  .log-panel.compact[data-position="bottom"] .scroll-area {
-    font-size: 11.5px;
-    line-height: 1.4;
-  }
-
-  .log-panel.compact[data-position="bottom"] .log-line {
-    grid-template-columns: 68px 58px 1fr;
-    padding: 1px 14px;
-  }
-
   .mascot-watermark {
     position: absolute;
     bottom: 0;
@@ -545,10 +523,5 @@
 
   .log-panel:hover .mascot-watermark {
     opacity: 0.25;
-  }
-
-  .log-panel.compact .mascot-watermark {
-    width: 90px;
-    right: 4px;
   }
 </style>

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t } from "$lib/i18n/i18n";
-  import { activeProfile, profileStates, uiState } from "$lib/stores";
+  import { activeProfile, profileStates } from "$lib/stores";
   import { get } from "svelte/store";
   import { onMount } from "svelte";
   import { listen } from "@tauri-apps/api/event";
@@ -108,7 +108,7 @@
 
 {#if !activeTask}
   <!-- Calm idle hero -->
-  <div class="hero-idle" class:compact={$uiState.taskViewVariant === "list"}>
+  <div class="hero-idle">
     <div
       class="icon-idle"
       class:icon-idle-game={!!gameTitle && !gameIcon.image}
@@ -150,7 +150,7 @@
   </div>
 {:else}
   <!-- Loud running hero -->
-  <div class="hero-running" class:compact={$uiState.taskViewVariant === "list"}>
+  <div class="hero-running">
     <!-- moving stripes bg -->
     <div class="stripes" aria-hidden="true"></div>
 
@@ -584,63 +584,5 @@
 
   .stop-btn:hover {
     filter: brightness(1.08);
-  }
-
-  /* Compact Mode Styles */
-  .hero-idle.compact {
-    margin: 12px 20px 0;
-    padding: 12px 18px;
-    gap: 14px;
-  }
-  .hero-idle.compact .icon-idle {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-  }
-  .hero-idle.compact .icon-idle svg {
-    width: 14px;
-    height: 14px;
-  }
-  .hero-idle.compact .title {
-    font-size: 15px;
-  }
-  .hero-idle.compact .meta {
-    font-size: 10px;
-    margin-bottom: 2px;
-  }
-  .hero-idle.compact .status {
-    font-size: 11px;
-    margin-top: 2px;
-  }
-
-  .hero-running.compact {
-    margin: 12px 20px 0;
-    padding: 10px 14px;
-  }
-  .hero-running.compact .game-icon-badge {
-    width: 44px;
-    height: 44px;
-    flex: 0 0 44px;
-    border-radius: 11px;
-    font-size: 15px;
-  }
-  .hero-running.compact .ring {
-    inset: -2px;
-    border-radius: 12px;
-  }
-  .hero-running.compact .task-name {
-    font-size: 15px;
-  }
-  .hero-running.compact .stats {
-    gap: 6px;
-    margin-top: 4px;
-  }
-  .hero-running.compact .pill {
-    padding: 3px 8px;
-    font-size: 11px;
-  }
-  .hero-running.compact .stop-btn {
-    padding: 6px 12px;
-    font-size: 12px;
   }
 </style>
