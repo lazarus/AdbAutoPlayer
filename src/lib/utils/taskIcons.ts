@@ -62,7 +62,7 @@ const iconMap: Array<{ keywords: string[]; icon: TaskIcon }> = [
     keywords: ["tracker", "scan", "afkj"],
     icon: {
       color: "#60a5fa",
-      path: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z",
+      path: "M21 21l-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16zM11 7v4l3 2",
     },
   },
   // AFK Journey — Combat
@@ -94,12 +94,28 @@ const iconMap: Array<{ keywords: string[]; icon: TaskIcon }> = [
       path: "M14.5 10c-.83 0-1.5-.67-1.5-1.5v-5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5zM20.5 10H19V8.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM9.5 14c.83 0 1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5S8 21.33 8 20.5v-5c0-.83.67-1.5 1.5-1.5zM3.5 14H5v1.5c0 .83-.67 1.5-1.5 1.5S2 16.33 2 15.5 2.67 14 3.5 14zM14 14.5c0-.83.67-1.5 1.5-1.5h5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-5c-.83 0-1.5-.67-1.5-1.5zM15.5 9H14v1.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5S16.33 9 15.5 9zM9.5 10c.83 0 1.5-.67 1.5-1.5v-5c0-.83-.67-1.5-1.5-1.5S8 2.67 8 3.5v5c0 .83.67 1.5 1.5 1.5zM10 9.5V11h1.5c.83 0 1.5-.67 1.5-1.5S12.33 8 11.5 8 10 8.67 10 9.5z",
     },
   },
-  // Routines / Custom
+  // Stages / progression (must come before "routine" so "stage progression" matches first)
   {
-    keywords: ["routine", "custom", "stage"],
+    keywords: ["stage", "progression"],
     icon: {
       color: "#a78bfa",
-      path: "M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2zM7 7h.01",
+      path: "M3 21h4v-7H3zM10 21h4V10h-4zM17 21h4V3h-4z",
+    },
+  },
+  // Routines / Custom
+  {
+    keywords: ["routine", "custom"],
+    icon: {
+      color: "#a78bfa",
+      path: "M12 3 2 9l10 6 10-6-10-6zM2 15l10 6 10-6M2 12l10 6 10-6",
+    },
+  },
+  // Dailies / chores
+  {
+    keywords: ["daily", "dailies", "chore"],
+    icon: {
+      color: "#34d399",
+      path: "M3 4h18v4H3zM3 10h18v4H3zM3 16h18v4H3z",
     },
   },
 ];

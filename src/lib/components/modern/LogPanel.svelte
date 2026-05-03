@@ -227,7 +227,7 @@
 <div
   class="log-panel"
   class:collapsed
-  class:compact={$uiState.taskViewVariant === "accordion"}
+  class:compact={$uiState.taskViewVariant === "list"}
   data-position={position}
   style={position === "bottom" && !collapsed
     ? `height: ${panelHeight}px; flex-basis: ${panelHeight}px`

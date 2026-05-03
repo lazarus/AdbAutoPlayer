@@ -108,10 +108,7 @@
 
 {#if !activeTask}
   <!-- Calm idle hero -->
-  <div
-    class="hero-idle"
-    class:compact={$uiState.taskViewVariant === "accordion"}
-  >
+  <div class="hero-idle" class:compact={$uiState.taskViewVariant === "list"}>
     <div
       class="icon-idle"
       class:icon-idle-game={!!gameTitle}
@@ -150,10 +147,7 @@
   </div>
 {:else}
   <!-- Loud running hero -->
-  <div
-    class="hero-running"
-    class:compact={$uiState.taskViewVariant === "accordion"}
-  >
+  <div class="hero-running" class:compact={$uiState.taskViewVariant === "list"}>
     <!-- moving stripes bg -->
     <div class="stripes" aria-hidden="true"></div>
 
@@ -175,9 +169,66 @@
           {displayTaskName}
         </div>
         <div class="stats">
-          <div class="stat">
-            <span class="stat-icon" aria-hidden="true">
+          <div class="pill" title={$t("Elapsed")}>
+            <svg
+              class="pill-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.9"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              width="12"
+              height="12"
+              aria-hidden="true"
+              ><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg
+            >
+            <span class="pill-value">{elapsed}</span>
+          </div>
+          {#if perHour > 0}
+            <div class="pill pill-rate" title={$t("Per hour")}>
               <svg
+                class="pill-icon"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                width="12"
+                height="12"
+                aria-hidden="true"
+                ><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" /></svg
+              >
+              <span class="pill-value">{perHour.toFixed(1)}</span>
+              <span class="pill-unit">/hr</span>
+            </div>
+          {/if}
+          {#if successRate >= 0}
+            <div
+              class="pill"
+              class:pill-ok={successRate >= 90}
+              class:pill-warn={successRate >= 60 && successRate < 90}
+              class:pill-err={successRate < 60}
+              title={$t("Success rate")}
+            >
+              <svg
+                class="pill-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.9"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                width="12"
+                height="12"
+                aria-hidden="true"
+                ><path d="M3 17 9 11l4 4 8-8" /><path d="M14 7h7v7" /></svg
+              >
+              <span class="pill-value">{successRate}%</span>
+              <span class="pill-unit">{$t("win")}</span>
+            </div>
+          {/if}
+          {#if clearedCount > 0}
+            <div class="pill pill-cleared" title={$t("Total cleared")}>
+              <svg
+                class="pill-icon"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -186,93 +237,55 @@
                 stroke-linejoin="round"
                 width="12"
                 height="12"
-                ><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg
-              >
-            </span>
-            <span class="stat-value big">{elapsed}</span>
-          </div>
-          {#if perHour > 0}
-            <div class="stat">
-              <span
-                class="stat-icon"
                 aria-hidden="true"
-                style="color: var(--ok)"
+                ><path
+                  d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21 1.18.54 2.03 2.03 2.03 3.79M18 2H6v7a6 6 0 0 0 12 0V2z"
+                /></svg
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  width="12"
-                  height="12"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" /></svg
-                >
-              </span>
-              <span class="stat-value stat-ok">{perHour.toFixed(1)}</span>
-              <span class="stat-unit">/hr</span>
-            </div>
-          {/if}
-          {#if successRate >= 0}
-            <div class="stat">
-              <span class="stat-icon" aria-hidden="true">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  width="12"
-                  height="12"
-                  ><path d="M3 17 9 11l4 4 8-8" /><path d="M14 7h7v7" /></svg
-                >
-              </span>
-              <span
-                class="stat-value"
-                class:stat-ok={successRate >= 90}
-                class:stat-warn={successRate >= 60 && successRate < 90}
-                class:stat-err={successRate < 60}>{successRate}%</span
-              >
-              <span class="stat-unit">{$t("success")}</span>
+              <span class="pill-value">{clearedCount}</span>
+              <span class="pill-unit">{$t("cleared")}</span>
             </div>
           {/if}
           {#if restartCount > 0}
-            <div class="stat">
-              <span class="stat-icon stat-warn" aria-hidden="true">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  width="12"
-                  height="12"
-                  ><path d="M21 12a9 9 0 1 1-3-6.7L21 8" /><path
-                    d="M21 3v5h-5"
-                  /></svg
-                >
-              </span>
-              <span class="stat-value stat-warn">{restartCount}</span>
-              <span class="stat-unit">{$t("restarts")}</span>
+            <div class="pill pill-warn" title={$t("Restarts")}>
+              <svg
+                class="pill-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.9"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                width="12"
+                height="12"
+                aria-hidden="true"
+                ><path d="M21 12a9 9 0 1 1-3-6.7L21 8" /><path
+                  d="M21 3v5h-5"
+                /></svg
+              >
+              <span class="pill-value">{restartCount}</span>
+              <span class="pill-unit">{$t("restarts")}</span>
             </div>
           {/if}
           {#if issueCount > 0}
-            <div class="stat">
-              <span class="stat-icon stat-err" aria-hidden="true">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  width="12"
-                  height="12"
-                  ><path
-                    d="M10.3 3.86 1.82 18a2 2 0 0 0 1.7 3h16.96a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"
-                  /></svg
-                >
-              </span>
-              <span class="stat-value stat-err">{issueCount}</span>
-              <span class="stat-unit">{$t("issues")}</span>
+            <div class="pill pill-err" title={$t("Issues")}>
+              <svg
+                class="pill-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.9"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                width="12"
+                height="12"
+                aria-hidden="true"
+                ><path
+                  d="M10.3 3.86 1.82 18a2 2 0 0 0 1.7 3h16.96a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"
+                /></svg
+              >
+              <span class="pill-value">{issueCount}</span>
+              <span class="pill-unit">{$t("issues")}</span>
             </div>
           {/if}
         </div>
@@ -442,51 +455,81 @@
 
   .stats {
     display: flex;
-    gap: 16px;
-    margin-top: 8px;
+    gap: 8px;
+    margin-top: 10px;
     align-items: center;
     flex-wrap: wrap;
   }
 
-  .stat {
+  .pill {
     display: inline-flex;
     align-items: center;
     gap: 5px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--bg-1) 70%, transparent);
+    border: 1px solid var(--line);
     font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-2);
   }
 
-  .stat-icon {
+  .pill-icon {
     color: var(--text-3);
-    display: inline-flex;
-    align-items: center;
+    flex-shrink: 0;
   }
 
-  .stat-value {
-    font-size: 13px;
-    font-weight: 600;
+  .pill-value {
+    font-weight: 700;
     color: var(--text-1);
   }
 
-  .stat-value.big {
-    font-size: 15px;
-  }
-
-  .stat-unit {
-    font-size: 11px;
+  .pill-unit {
     color: var(--text-3);
     font-weight: 500;
+    font-size: 11px;
   }
 
-  .stat-warn {
+  .pill-rate {
+    border-color: color-mix(in oklab, var(--warn) 35%, var(--line));
+  }
+  .pill-rate .pill-icon {
+    color: var(--warn);
+  }
+  .pill-rate .pill-value {
     color: var(--warn);
   }
 
-  .stat-err {
+  .pill-ok {
+    border-color: color-mix(in oklab, var(--ok) 35%, var(--line));
+  }
+  .pill-ok .pill-icon,
+  .pill-ok .pill-value {
+    color: var(--ok);
+  }
+
+  .pill-warn {
+    border-color: color-mix(in oklab, var(--warn) 35%, var(--line));
+  }
+  .pill-warn .pill-icon,
+  .pill-warn .pill-value {
+    color: var(--warn);
+  }
+
+  .pill-err {
+    border-color: color-mix(in oklab, var(--err) 35%, var(--line));
+  }
+  .pill-err .pill-icon,
+  .pill-err .pill-value {
     color: var(--err);
   }
 
-  .stat-ok {
-    color: var(--ok);
+  .pill-cleared {
+    border-color: color-mix(in oklab, #fb923c 35%, var(--line));
+  }
+  .pill-cleared .pill-icon,
+  .pill-cleared .pill-value {
+    color: #fb923c;
   }
 
   .stop-btn {
@@ -557,11 +600,12 @@
     font-size: 15px;
   }
   .hero-running.compact .stats {
-    gap: 12px;
+    gap: 6px;
     margin-top: 4px;
   }
-  .hero-running.compact .stat-value.big {
-    font-size: 14px;
+  .hero-running.compact .pill {
+    padding: 3px 8px;
+    font-size: 11px;
   }
   .hero-running.compact .stop-btn {
     padding: 6px 12px;

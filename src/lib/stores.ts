@@ -15,7 +15,7 @@ const defaultUiState = {
   theme: "dark" as "dark" | "light",
   accentHue: 272,
   customizerOpen: false,
-  taskViewVariant: "cards" as "cards" | "palette" | "accordion",
+  taskViewVariant: "cards" as "cards" | "list",
 };
 
 let initialUiState = { ...defaultUiState };
@@ -31,6 +31,12 @@ if (typeof window !== "undefined") {
         showSettings: false,
         customizerOpen: false,
       };
+      if (
+        initialUiState.taskViewVariant !== "cards" &&
+        initialUiState.taskViewVariant !== "list"
+      ) {
+        initialUiState.taskViewVariant = "cards";
+      }
     }
   } catch (e) {
     console.error("Failed to load uiState from localStorage", e);

@@ -62,30 +62,6 @@
     }
     return cats;
   });
-
-  let openAccordions = $state(new Set<string>());
-  let seenCategories = new Set<string>();
-
-  $effect(() => {
-    // Only auto-open categories the first time we see them
-    const newCats = activeCategories.filter((c) => !seenCategories.has(c));
-    if (newCats.length > 0) {
-      for (const c of newCats) {
-        seenCategories.add(c);
-        openAccordions.add(c);
-      }
-      openAccordions = new Set(openAccordions);
-    }
-  });
-
-  function toggleAccordion(cat: string) {
-    if (openAccordions.has(cat)) {
-      openAccordions.delete(cat);
-    } else {
-      openAccordions.add(cat);
-    }
-    openAccordions = new Set(openAccordions);
-  }
 </script>
 
 <svelte:window onkeydown={handleGlobalKeydown} />
@@ -133,7 +109,7 @@
     </div>
 
     <div class="variant-toggle">
-      {#each [{ id: "cards", label: $t("Cards"), icon: "M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z" }, { id: "palette", label: $t("Palette"), icon: "M8 6h13M8 12h13M8 18h13M4 6h.01M4 12h.01M4 18h.01" }, { id: "accordion", label: $t("Accordion"), icon: "M3 4h18v6H3zM3 14h18v6H3z" }] as v}
+      {#each [{ id: "cards", label: $t("Cards"), icon: "M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z" }, { id: "list", label: $t("List"), icon: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" }] as v}
         <button
           class="v-btn"
           class:active={$uiState.taskViewVariant === v.id}
@@ -261,142 +237,59 @@
           </section>
         {/each}
       </div>
-    {:else if $uiState.taskViewVariant === "palette"}
-      <div class="palette-view">
+    {:else}
+      <!-- Condensed list view -->
+      <div class="list-view">
         {#each activeCategories as cat}
-          <div class="palette-section">
-            <div class="palette-cat">{$t(cat || "Other")}</div>
-            {#each categorizedButtons[cat] as b}
-              {@const isPaletteDisabled =
-                disableActions && !b.isProcessRunning && !b.alwaysEnabled}
-              <button
-                class="palette-item"
-                class:active={b.isProcessRunning}
-                disabled={isPaletteDisabled}
-                title={isPaletteDisabled
-                  ? $t("Stop the running task before starting another")
-                  : b.option.tooltip
-                    ? $t(b.option.tooltip)
-                    : undefined}
-                onclick={b.callback}
+          <div class="list-section">
+            <div class="list-section-header">
+              <span class="list-section-title">{$t(cat || "Other")}</span>
+              <span class="list-section-count"
+                >{categorizedButtons[cat].length}</span
               >
-                <span class="item-icon">
-                  {#if b.isProcessRunning}
-                    <span class="dot"></span>
-                  {:else}
+            </div>
+            <div class="list-rows">
+              {#each categorizedButtons[cat] as b}
+                {@const isDisabled =
+                  disableActions && !b.isProcessRunning && !b.alwaysEnabled}
+                {@const icon = getTaskIcon(b.option.label)}
+                <button
+                  class="list-row"
+                  class:active={b.isProcessRunning}
+                  disabled={isDisabled}
+                  title={isDisabled
+                    ? $t("Stop the running task before starting another")
+                    : undefined}
+                  onclick={b.callback}
+                >
+                  <div class="list-icon" style="--icon-color: {icon.color}">
                     <svg
                       viewBox="0 0 24 24"
-                      fill="currentColor"
-                      width="10"
-                      height="10"><path d="M8 5v14l11-7z" /></svg
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      width="14"
+                      height="14"
                     >
-                  {/if}
-                </span>
-                <span class="item-label">{$t(b.option.label)}</span>
-                {#if b.option.tooltip}
-                  <span class="item-hint">— {$t(b.option.tooltip)}</span>
-                {/if}
-                <div class="spacer"></div>
-                {#if b.isProcessRunning}
-                  <span class="item-status">{$t("Running")}</span>
-                {/if}
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  width="14"
-                  height="14"
-                  class="chevron"><path d="m9 18 6-6-6-6" /></svg
-                >
-              </button>
-            {/each}
-          </div>
-        {/each}
-      </div>
-    {:else}
-      <div class="accordion-view">
-        {#each activeCategories as cat}
-          {@const isOpen = openAccordions.has(cat)}
-          <div class="accordion-item">
-            <button
-              class="accordion-trigger"
-              onclick={() => toggleAccordion(cat)}
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                width="14"
-                height="14"
-                class="chevron-toggle"
-                style="transform: {isOpen ? 'rotate(90deg)' : 'rotate(0)'}"
-                ><path d="m9 18 6-6-6-6" /></svg
-              >
-              <span class="acc-title">{$t(cat || "Other")}</span>
-              <div class="spacer"></div>
-              <span class="acc-count">{categorizedButtons[cat].length}</span>
-            </button>
-            {#if isOpen}
-              <div class="acc-content">
-                <div class="grid">
-                  {#each categorizedButtons[cat] as b}
-                    {@const isDisabled =
-                      disableActions && !b.isProcessRunning && !b.alwaysEnabled}
-                    {@const icon = getTaskIcon(b.option.label)}
-                    <button
-                      class="task-card"
-                      class:active={b.isProcessRunning}
-                      disabled={isDisabled}
-                      title={isDisabled
-                        ? $t("Stop the running task before starting another")
-                        : b.option.tooltip
-                          ? $t(b.option.tooltip)
-                          : undefined}
-                      onclick={b.callback}
-                    >
-                      <div class="card-icon" style="--icon-color: {icon.color}">
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="1.8"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          width="14"
-                          height="14"
-                        >
-                          <path d={icon.path} />
-                        </svg>
-                      </div>
-                      <div class="card-top">
-                        <div class="card-label">{$t(b.option.label)}</div>
-                        {#if b.isProcessRunning}
-                          <span class="running-tag">● {$t("Run")}</span>
-                        {:else}
-                          <div class="play-box">
-                            <svg
-                              viewBox="0 0 24 24"
-                              fill="currentColor"
-                              width="10"
-                              height="10"><path d="M8 5v14l11-7z" /></svg
-                            >
-                          </div>
-                        {/if}
-                      </div>
-                      {#if b.option.tooltip}
-                        <div class="card-hint">{$t(b.option.tooltip)}</div>
+                      <path d={icon.path} />
+                    </svg>
+                  </div>
+                  <div class="list-text">
+                    <div class="list-row-top">
+                      <span class="list-label">{$t(b.option.label)}</span>
+                      {#if b.isProcessRunning}
+                        <span class="running-tag">● {$t("Run")}</span>
                       {/if}
-                    </button>
-                  {/each}
-                </div>
-              </div>
-            {/if}
+                    </div>
+                    {#if b.option.tooltip}
+                      <div class="list-hint">{$t(b.option.tooltip)}</div>
+                    {/if}
+                  </div>
+                </button>
+              {/each}
+            </div>
           </div>
         {/each}
       </div>
@@ -671,165 +564,119 @@
     line-height: 1.45;
   }
 
-  /* Palette View */
-  .palette-view {
-    padding: 14px 20px;
+  /* List View */
+  .list-view {
+    padding: 0 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
   }
 
-  .palette-section {
+  .list-section {
     background: var(--bg-1);
     border: 1px solid var(--line);
     border-radius: 12px;
     overflow: hidden;
-    margin-bottom: 20px;
   }
 
-  .palette-cat {
-    padding: 8px 14px;
-    font-size: 10px;
+  .list-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px 8px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .list-section-title {
+    font-size: 11px;
     font-weight: 700;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--text-3);
-    background: var(--bg-2);
-    border-bottom: 1px solid var(--line);
   }
 
-  .palette-item {
+  .list-section-count {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-4);
+  }
+
+  .list-rows {
     display: flex;
+    flex-direction: column;
+  }
+
+  .list-row {
     width: 100%;
+    display: flex;
     align-items: center;
     gap: 12px;
     padding: 10px 14px;
-    border-bottom: 1px solid var(--line-soft);
     background: transparent;
+    border: 0;
+    border-left: 2px solid transparent;
+    border-bottom: 1px solid var(--line-soft);
     text-align: left;
-    transition: background var(--dur-1);
+    transition:
+      background var(--dur-1),
+      border-color var(--dur-1);
   }
 
-  .palette-item:last-child {
+  .list-row:last-child {
     border-bottom: none;
   }
 
-  .palette-item:not(:disabled):hover {
-    background: var(--bg-2);
+  .list-row:not(:disabled):hover {
+    background: var(--bg-hover);
   }
 
-  .palette-item:disabled {
+  .list-row:disabled {
     opacity: 0.45;
     cursor: not-allowed;
   }
 
-  .palette-item.active {
-    background: var(--accent-ghost);
+  .list-row.active {
+    background: color-mix(in oklab, var(--accent) 8%, var(--bg-1));
+    border-left-color: var(--accent);
   }
 
-  .item-icon {
-    width: 22px;
-    height: 22px;
-    border-radius: 6px;
+  .list-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
     display: grid;
     place-items: center;
-    background: var(--bg-3);
-    color: var(--text-3);
-    flex: 0 0 auto;
+    background: color-mix(in oklab, var(--icon-color) 18%, var(--bg-2));
+    color: var(--icon-color);
+    flex: 0 0 30px;
   }
 
-  .palette-item.active .item-icon {
-    background: var(--accent);
-    color: white;
-  }
-
-  .dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 999px;
-    background: white;
-  }
-
-  .item-label {
-    font-weight: 600;
-    font-size: 13px;
-  }
-
-  .item-hint {
-    font-size: 11px;
-    color: var(--text-3);
-  }
-
-  .spacer {
+  .list-text {
     flex: 1;
+    min-width: 0;
   }
 
-  .item-status {
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--accent);
-    font-family: var(--font-mono);
-  }
-
-  .chevron {
-    color: var(--text-4);
-  }
-
-  /* Accordion View */
-  .accordion-view {
-    padding: 14px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .accordion-item {
-    background: var(--bg-1);
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    overflow: hidden;
-  }
-
-  .accordion-trigger {
-    width: 100%;
+  .list-row-top {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
-    text-align: left;
-    transition: background var(--dur-1);
+    gap: 8px;
   }
 
-  .accordion-trigger:hover {
-    background: var(--bg-hover);
-  }
-
-  .chevron-toggle {
-    color: var(--text-3);
-    transition: transform var(--dur-1);
-  }
-
-  .acc-title {
+  .list-label {
     font-weight: 600;
     font-size: 13.5px;
+    color: var(--text-1);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .acc-count {
-    font-size: 11px;
-    font-family: var(--font-mono);
-    color: var(--text-4);
-  }
-
-  .acc-content {
-    padding: 0 10px 10px;
-  }
-
-  .accordion-view .grid {
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  }
-
-  .accordion-view .task-card {
-    min-height: 52px;
-    padding: 10px 14px;
-    gap: 4px;
+  .list-hint {
+    font-size: 11.5px;
+    color: var(--text-3);
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 </style>
