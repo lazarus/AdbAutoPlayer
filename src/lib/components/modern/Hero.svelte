@@ -324,15 +324,16 @@
   }
 
   .icon-idle {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
+    width: 56px;
+    height: 56px;
+    aspect-ratio: 1 / 1;
+    border-radius: 14px;
     background: linear-gradient(135deg, var(--bg-3), var(--bg-2));
     display: grid;
     place-items: center;
     color: var(--text-3);
     border: 1px solid var(--line);
-    flex: 0 0 44px;
+    flex: 0 0 56px;
   }
 
   .icon-idle-game {
@@ -404,48 +405,46 @@
   }
 
   .game-icon-badge {
-    width: 52px;
-    height: 52px;
-    border-radius: 14px;
+    width: 72px;
+    height: 72px;
+    aspect-ratio: 1 / 1;
+    border-radius: 16px;
     display: grid;
     place-items: center;
     color: white;
     font-weight: 800;
-    font-size: 17px;
+    font-size: 24px;
     letter-spacing: -0.02em;
     position: relative;
-    flex: 0 0 52px;
-    overflow: hidden;
+    flex: 0 0 72px;
   }
 
   .game-icon-badge.game-icon-image {
-    background: var(--bg-2);
+    background: transparent;
   }
 
   .game-img {
     width: 100%;
     height: 100%;
+    aspect-ratio: 1 / 1;
     object-fit: cover;
     display: block;
+    border-radius: inherit;
   }
 
   .icon-idle.icon-idle-image {
-    background: var(--bg-2);
-    border: 1px solid var(--line);
-    overflow: hidden;
+    background: transparent;
+    border: none;
     padding: 0;
-  }
-
-  .icon-idle .game-img {
-    border-radius: inherit;
   }
 
   .ring {
     position: absolute;
     inset: -4px;
-    border-radius: 18px;
+    border-radius: 20px;
     border: 2px solid color-mix(in oklab, var(--accent) 50%, transparent);
     animation: ringpulse 2s ease-out infinite;
+    pointer-events: none;
   }
 
   .main-info {
@@ -619,11 +618,11 @@
     padding: 10px 14px;
   }
   .hero-running.compact .game-icon-badge {
-    width: 38px;
-    height: 38px;
-    flex: 0 0 38px;
-    border-radius: 10px;
-    font-size: 13px;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    border-radius: 11px;
+    font-size: 15px;
   }
   .hero-running.compact .ring {
     inset: -2px;
