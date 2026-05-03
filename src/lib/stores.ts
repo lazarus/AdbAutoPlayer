@@ -18,6 +18,9 @@ const defaultUiState = {
   accentLightness: 0.67,
   customizerOpen: false,
   taskViewVariant: "cards" as "cards" | "list",
+  miniMode: false,
+  miniLogOpen: false,
+  pinTop: false,
 };
 
 let initialUiState = { ...defaultUiState };
@@ -39,6 +42,9 @@ if (typeof window !== "undefined") {
       ) {
         initialUiState.taskViewVariant = "cards";
       }
+      // Don't restore miniMode on launch — user opens app expecting full UI.
+      initialUiState.miniMode = false;
+      initialUiState.miniLogOpen = false;
     }
   } catch (e) {
     console.error("Failed to load uiState from localStorage", e);
@@ -58,6 +64,7 @@ if (typeof window !== "undefined") {
         accentChroma: state.accentChroma,
         accentLightness: state.accentLightness,
         taskViewVariant: state.taskViewVariant,
+        pinTop: state.pinTop,
       };
       localStorage.setItem("uiState", JSON.stringify(stateToSave));
     } catch (e) {

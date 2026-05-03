@@ -32,6 +32,8 @@
   import ProfileSidebar from "$lib/components/modern/ProfileSidebar.svelte";
   import LogPanel from "$lib/components/modern/LogPanel.svelte";
   import ThemeCustomizer from "$lib/components/modern/ThemeCustomizer.svelte";
+  import MiniWindow from "$lib/components/modern/MiniWindow.svelte";
+  import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
   import SchemaForm from "$lib/form/SchemaForm.svelte";
   import type {
     SettingsProps,
@@ -45,6 +47,7 @@
     cacheClear,
     debug,
     startTask,
+    stopTask,
   } from "$pytauri/apiClient";
   import { t } from "$lib/i18n/i18n";
 
@@ -130,6 +133,82 @@
 
   function toggleLog() {
     $uiState.logOpen = !$uiState.logOpen;
+  }
+
+  // --- Mini Mode + Pin-on-top ---
+  // Saved size to restore when exiting mini mode
+  let savedFullSize: { width: number; height: number } | null = null;
+  const MINI_W = 480;
+  const MINI_H_BAR = 64;
+  const MINI_H_WITH_LOG = 320;
+
+  async function enterMiniMode() {
+    try {
+      const win = getCurrentWindow();
+      const size = await win.outerSize();
+      // Convert physical to logical pixels using window scale factor
+      const sf = await win.scaleFactor();
+      savedFullSize = {
+        width: Math.round(size.width / sf),
+        height: Math.round(size.height / sf),
+      };
+      $uiState.miniMode = true;
+      $uiState.miniLogOpen = false;
+      await win.setSize(new LogicalSize(MINI_W, MINI_H_BAR));
+    } catch (e) {
+      console.error("Failed to enter mini mode:", e);
+    }
+  }
+
+  async function exitMiniMode() {
+    try {
+      const win = getCurrentWindow();
+      $uiState.miniMode = false;
+      $uiState.miniLogOpen = false;
+      const w = savedFullSize?.width ?? 1100;
+      const h = savedFullSize?.height ?? 700;
+      await win.setSize(new LogicalSize(w, h));
+    } catch (e) {
+      console.error("Failed to exit mini mode:", e);
+    }
+  }
+
+  async function toggleMiniLog() {
+    try {
+      const win = getCurrentWindow();
+      $uiState.miniLogOpen = !$uiState.miniLogOpen;
+      const h = $uiState.miniLogOpen ? MINI_H_WITH_LOG : MINI_H_BAR;
+      await win.setSize(new LogicalSize(MINI_W, h));
+    } catch (e) {
+      console.error("Failed to toggle mini log:", e);
+    }
+  }
+
+  async function togglePin() {
+    try {
+      const win = getCurrentWindow();
+      $uiState.pinTop = !$uiState.pinTop;
+      await win.setAlwaysOnTop($uiState.pinTop);
+    } catch (e) {
+      console.error("Failed to toggle pin:", e);
+    }
+  }
+
+  // Apply persisted pinTop on mount
+  onMount(() => {
+    if ($uiState.pinTop) {
+      getCurrentWindow()
+        .setAlwaysOnTop(true)
+        .catch((e) => console.error(e));
+    }
+  });
+
+  async function handleStop() {
+    try {
+      await stopTask({ profile_index: $activeProfile });
+    } catch (e) {
+      void logError(String(e));
+    }
   }
 
   // --- Global Settings Logic ---
@@ -333,154 +412,164 @@
 </Toast.Group>
 
 <div class="app-container {$uiState.theme}">
-  <StatusBar
-    theme={$uiState.theme}
-    onToggleSidebar={toggleSidebar}
-    onToggleLog={toggleLog}
-    onDocs={handleDocs}
-    onAppSettings={() => {
-      $uiState.settingsType = "app";
-      $uiState.showSettings = true;
-    }}
-    onGameSettings={() => {
-      $uiState.settingsType = "game";
-      $uiState.showSettings = true;
-    }}
-    onAdbSettings={() => {
-      $uiState.settingsType = "adb";
-      $uiState.showSettings = true;
-    }}
-    sidebarOpen={$uiState.sidebarOpen}
-    logOpen={$uiState.logOpen}
-    onCustomizer={() => ($uiState.customizerOpen = !$uiState.customizerOpen)}
-  />
+  {#if $uiState.miniMode}
+    <MiniWindow
+      onStop={handleStop}
+      onTogglePin={togglePin}
+      onToggleLog={toggleMiniLog}
+      onExitMini={exitMiniMode}
+    />
+  {:else}
+    <StatusBar
+      theme={$uiState.theme}
+      onToggleSidebar={toggleSidebar}
+      onToggleLog={toggleLog}
+      onDocs={handleDocs}
+      onAppSettings={() => {
+        $uiState.settingsType = "app";
+        $uiState.showSettings = true;
+      }}
+      onGameSettings={() => {
+        $uiState.settingsType = "game";
+        $uiState.showSettings = true;
+      }}
+      onAdbSettings={() => {
+        $uiState.settingsType = "adb";
+        $uiState.showSettings = true;
+      }}
+      sidebarOpen={$uiState.sidebarOpen}
+      logOpen={$uiState.logOpen}
+      onCustomizer={() => ($uiState.customizerOpen = !$uiState.customizerOpen)}
+      onEnterMini={enterMiniMode}
+    />
 
-  {#if $uiState.customizerOpen}
-    <ThemeCustomizer onClose={() => ($uiState.customizerOpen = false)} />
-  {/if}
+    {#if $uiState.customizerOpen}
+      <ThemeCustomizer onClose={() => ($uiState.customizerOpen = false)} />
+    {/if}
 
-  <!-- Global Settings Overlay -->
-  {#if settingsProps.showSettingsForm}
-    <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-    <div
-      class="global-settings-overlay"
-      onclick={closeSettings}
-      role="presentation"
-    >
+    <!-- Global Settings Overlay -->
+    {#if settingsProps.showSettingsForm}
       <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
       <div
-        class="settings-card"
-        onclick={(e) => e.stopPropagation()}
+        class="global-settings-overlay"
+        onclick={closeSettings}
         role="presentation"
       >
-        <div class="settings-header">
-          <div class="settings-title">
-            {settingsProps.fileName === "App.toml"
-              ? $t("App Settings")
-              : settingsProps.type === "adb"
-                ? $t("ADB Settings")
-                : settingsProps.type === "game"
-                  ? $t("Game Settings")
-                  : $t("Settings")}
-          </div>
-          <div class="settings-header-actions">
-            <button
-              class="save-btn"
-              class:success={settingsSaveSuccess}
-              disabled={settingsIsSaving}
-              onclick={handleSettingsSave}
-            >
-              {#if settingsIsSaving}
-                <span class="spinner"></span>
-              {:else if settingsSaveSuccess}
+        <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+        <div
+          class="settings-card"
+          onclick={(e) => e.stopPropagation()}
+          role="presentation"
+        >
+          <div class="settings-header">
+            <div class="settings-title">
+              {settingsProps.fileName === "App.toml"
+                ? $t("App Settings")
+                : settingsProps.type === "adb"
+                  ? $t("ADB Settings")
+                  : settingsProps.type === "game"
+                    ? $t("Game Settings")
+                    : $t("Settings")}
+            </div>
+            <div class="settings-header-actions">
+              <button
+                class="save-btn"
+                class:success={settingsSaveSuccess}
+                disabled={settingsIsSaving}
+                onclick={handleSettingsSave}
+              >
+                {#if settingsIsSaving}
+                  <span class="spinner"></span>
+                {:else if settingsSaveSuccess}
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    width="13"
+                    height="13"><path d="M20 6 9 17l-5-5" /></svg
+                  >
+                  {$t("Saved")}
+                {:else}
+                  {$t("Save")}
+                {/if}
+              </button>
+              <button
+                class="close-btn"
+                onclick={closeSettings}
+                aria-label="Close settings"
+              >
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  stroke-width="2.5"
+                  stroke-width="2"
                   stroke-linecap="round"
                   stroke-linejoin="round"
-                  width="13"
-                  height="13"><path d="M20 6 9 17l-5-5" /></svg
+                  width="18"
+                  height="18"><path d="M18 6 6 18M6 6l12 12" /></svg
                 >
-                {$t("Saved")}
-              {:else}
-                {$t("Save")}
+              </button>
+            </div>
+          </div>
+          <div class="settings-body">
+            <SchemaForm bind:settingsProps />
+          </div>
+          {#if settingsProps.type === "adb"}
+            <div class="quick-actions">
+              {#if adbQuickActions.length > 0}
+                {#each adbQuickActions as action}
+                  <button
+                    class="action-chip"
+                    onclick={() => handleQuickAction(action)}
+                  >
+                    {action.label}
+                  </button>
+                {/each}
               {/if}
-            </button>
-            <button
-              class="close-btn"
-              onclick={closeSettings}
-              aria-label="Close settings"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                width="18"
-                height="18"><path d="M18 6 6 18M6 6l12 12" /></svg
+              <button
+                class="action-chip"
+                onclick={() => {
+                  callDebug();
+                  closeSettings();
+                }}
               >
-            </button>
-          </div>
+                {$t("Run Debug Routine")}
+              </button>
+            </div>
+          {/if}
         </div>
-        <div class="settings-body">
-          <SchemaForm bind:settingsProps />
-        </div>
-        {#if settingsProps.type === "adb"}
-          <div class="quick-actions">
-            {#if adbQuickActions.length > 0}
-              {#each adbQuickActions as action}
-                <button
-                  class="action-chip"
-                  onclick={() => handleQuickAction(action)}
-                >
-                  {action.label}
-                </button>
-              {/each}
-            {/if}
-            <button
-              class="action-chip"
-              onclick={() => {
-                callDebug();
-                closeSettings();
-              }}
-            >
-              {$t("Run Debug Routine")}
-            </button>
-          </div>
-        {/if}
       </div>
+    {/if}
+
+    <div
+      class="main-layout"
+      class:layout-bottom={$appSettings?.ui?.log_panel_position === "bottom"}
+    >
+      <div class="content-wrapper">
+        {#if $uiState.sidebarOpen}
+          <ProfileSidebar
+            collapsed={sidebarCollapsed}
+            onAddProfile={handleAddProfile}
+          />
+        {/if}
+
+        <main class="content-area">
+          <UpdateContainer />
+          {@render children()}
+        </main>
+      </div>
+
+      <LogPanel
+        profileIndex={$activeProfile}
+        onClear={() => {}}
+        collapsed={!$uiState.logOpen}
+        position={$appSettings?.ui?.log_panel_position}
+      />
     </div>
   {/if}
-
-  <div
-    class="main-layout"
-    class:layout-bottom={$appSettings?.ui?.log_panel_position === "bottom"}
-  >
-    <div class="content-wrapper">
-      {#if $uiState.sidebarOpen}
-        <ProfileSidebar
-          collapsed={sidebarCollapsed}
-          onAddProfile={handleAddProfile}
-        />
-      {/if}
-
-      <main class="content-area">
-        <UpdateContainer />
-        {@render children()}
-      </main>
-    </div>
-
-    <LogPanel
-      profileIndex={$activeProfile}
-      onClear={() => {}}
-      collapsed={!$uiState.logOpen}
-      position={$appSettings?.ui?.log_panel_position}
-    />
-  </div>
 </div>
 
 <style>

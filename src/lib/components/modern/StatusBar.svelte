@@ -16,6 +16,7 @@
     onGameSettings: () => void;
     onAdbSettings: () => void;
     onCustomizer: () => void;
+    onEnterMini: () => void;
     sidebarOpen: boolean;
     logOpen: boolean;
   }
@@ -29,6 +30,7 @@
     onGameSettings,
     onAdbSettings,
     onCustomizer,
+    onEnterMini,
     sidebarOpen,
     logOpen,
   }: Props = $props();
@@ -117,6 +119,27 @@
       >{$appSettings?.profiles?.profiles?.[$activeProfile] ?? "Profile"}</span
     >
   </div>
+
+  <button class="icon-btn" title={$t("Mini mode")} onclick={onEnterMini}>
+    <!-- minimize-to-corner: window with smaller window inside -->
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.7"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      width="14"
+      height="14"
+      ><rect x="3" y="3" width="18" height="14" rx="2" /><rect
+        x="9"
+        y="11"
+        width="10"
+        height="8"
+        rx="1.5"
+      /></svg
+    >
+  </button>
 
   <button class="icon-btn" title={$t("Theme & accent")} onclick={onCustomizer}>
     {#if theme === "dark"}
