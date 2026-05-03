@@ -13,7 +13,6 @@
   let { buttons, disableActions, categories }: Props = $props();
 
   let query = $state("");
-  let activeCategoryFilter = $state<string>("");
   let searchInput: HTMLInputElement;
 
   function handleGlobalKeydown(e: KeyboardEvent) {
@@ -24,20 +23,8 @@
   }
 
   const filteredButtons = $derived(
-    buttons.filter((b) => {
-      const matchesQuery = b.option.label
-        .toLowerCase()
-        .includes(query.toLowerCase());
-      const matchesCategory =
-        !activeCategoryFilter ||
-        (b.option.category || "") === activeCategoryFilter;
-      return matchesQuery && matchesCategory;
-    }),
-  );
-
-  const availableCategories = $derived(
-    categories.filter((c) =>
-      buttons.some((b) => (b.option.category || "") === c),
+    buttons.filter((b) =>
+      b.option.label.toLowerCase().includes(query.toLowerCase()),
     ),
   );
 
@@ -134,24 +121,6 @@
     </div>
   </div>
 
-  {#if availableCategories.length > 1}
-    <div class="cat-pills">
-      <button
-        class="cat-pill"
-        class:active={activeCategoryFilter === ""}
-        onclick={() => (activeCategoryFilter = "")}>{$t("All")}</button
-      >
-      {#each availableCategories as cat}
-        <button
-          class="cat-pill"
-          class:active={activeCategoryFilter === cat}
-          onclick={() => (activeCategoryFilter = cat)}
-          >{$t(cat || "Other")}</button
-        >
-      {/each}
-    </div>
-  {/if}
-
   <div class="view-content">
     {#if activeCategories.length === 0 && query}
       <div class="empty-search">
@@ -175,9 +144,6 @@
             <div class="section-header">
               <div class="section-title">{$t(cat || "Other")}</div>
               <div class="section-line"></div>
-              <div class="section-count">
-                {categorizedButtons[cat].length}
-              </div>
             </div>
             <div class="grid">
               {#each categorizedButtons[cat] as b}
@@ -244,9 +210,6 @@
           <div class="list-section">
             <div class="list-section-header">
               <span class="list-section-title">{$t(cat || "Other")}</span>
-              <span class="list-section-count"
-                >{categorizedButtons[cat].length}</span
-              >
             </div>
             <div class="list-rows">
               {#each categorizedButtons[cat] as b}
@@ -414,12 +377,6 @@
     background: var(--line-soft);
   }
 
-  .section-count {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text-4);
-  }
-
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -442,36 +399,6 @@
       background var(--dur-1),
       box-shadow var(--dur-1);
     text-align: left;
-  }
-
-  .cat-pills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    padding: 0 20px;
-    margin-top: -4px;
-  }
-
-  .cat-pill {
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-3);
-    background: transparent;
-    border: 1px solid var(--line);
-    transition: all var(--dur-1);
-  }
-
-  .cat-pill:hover:not(.active) {
-    color: var(--text-2);
-    background: var(--bg-2);
-  }
-
-  .cat-pill.active {
-    color: var(--accent);
-    background: var(--accent-ghost);
-    border-color: color-mix(in oklab, var(--accent) 30%, transparent);
   }
 
   .empty-search {
@@ -593,12 +520,6 @@
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--text-3);
-  }
-
-  .list-section-count {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text-4);
   }
 
   .list-rows {
