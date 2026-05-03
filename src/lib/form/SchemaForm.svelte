@@ -89,7 +89,7 @@
 
 <form id="schema-form" class="schema-form" onsubmit={(e) => e.preventDefault()}>
   {#if sections.length > 1}
-    <div class="tab-bar" role="tablist">
+    <div class="tab-rail" role="tablist" aria-label="Settings sections">
       {#each sections as section}
         <button
           type="button"
@@ -236,46 +236,58 @@
 <style>
   .schema-form {
     display: flex;
-    flex-direction: column;
-    height: 100%;
+    flex-direction: row;
+    flex: 1;
+    min-height: 0;
     background: var(--bg-1);
   }
 
-  .tab-bar {
+  .tab-rail {
+    flex: 0 0 168px;
+    width: 168px;
+    border-right: 1px solid var(--line);
+    background: var(--bg-2);
+    overflow-y: auto;
+    padding: 8px;
     display: flex;
+    flex-direction: column;
     gap: 2px;
-    padding: 8px 16px 0;
-    border-bottom: 1px solid var(--line);
-    overflow-x: auto;
   }
 
   .tab {
-    padding: 8px 14px;
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 7px 10px;
     border: 0;
+    border-radius: 6px;
     background: transparent;
     color: var(--text-3);
     font-size: 12.5px;
-    font-weight: 600;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
+    font-weight: 500;
     transition:
-      color var(--dur-1),
-      border-color var(--dur-1);
-    white-space: nowrap;
+      background var(--dur-1),
+      color var(--dur-1);
     cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .tab:hover {
+    background: var(--bg-hover);
     color: var(--text-1);
   }
 
   .tab.active {
+    background: var(--accent-ghost);
     color: var(--accent);
-    border-bottom-color: var(--accent);
+    font-weight: 600;
   }
 
   .section-content {
     flex: 1;
+    min-width: 0;
     overflow-y: auto;
     padding: 20px;
     display: flex;

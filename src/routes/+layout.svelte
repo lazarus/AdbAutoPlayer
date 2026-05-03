@@ -537,7 +537,8 @@
     border: 1px solid var(--line);
     border-radius: var(--radius-lg);
     width: 100%;
-    max-width: 800px;
+    max-width: 880px;
+    height: 100%;
     max-height: 90vh;
     display: flex;
     flex-direction: column;
@@ -624,11 +625,10 @@
   }
 
   .settings-body {
-    flex: 1;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+    flex: 1 1 auto;
     min-height: 0;
+    display: flex;
+    overflow: hidden;
   }
 
   .close-btn {
