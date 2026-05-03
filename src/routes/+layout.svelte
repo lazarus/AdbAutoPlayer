@@ -219,6 +219,27 @@
     $uiState.showSettings = false;
   }
 
+  let settingsIsSaving = $state(false);
+  let settingsSaveSuccess = $state(false);
+
+  async function handleSettingsSave() {
+    const formEl = document.getElementById(
+      "schema-form",
+    ) as HTMLFormElement | null;
+    if (formEl && !formEl.checkValidity()) {
+      formEl.reportValidity();
+      return;
+    }
+    settingsIsSaving = true;
+    try {
+      await onFormSubmit();
+      settingsSaveSuccess = true;
+      setTimeout(() => (settingsSaveSuccess = false), 2000);
+    } finally {
+      settingsIsSaving = false;
+    }
+  }
+
   async function onFormSubmit() {
     const profile = $activeProfile;
     try {
@@ -362,57 +383,75 @@
                   ? $t("Game Settings")
                   : $t("Settings")}
           </div>
-          <button
-            class="close-btn"
-            onclick={closeSettings}
-            aria-label="Close settings"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              width="18"
-              height="18"><path d="M18 6 6 18M6 6l12 12" /></svg
+          <div class="settings-header-actions">
+            <button
+              class="save-btn"
+              class:success={settingsSaveSuccess}
+              disabled={settingsIsSaving}
+              onclick={handleSettingsSave}
             >
-          </button>
+              {#if settingsIsSaving}
+                <span class="spinner"></span>
+              {:else if settingsSaveSuccess}
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  width="13"
+                  height="13"><path d="M20 6 9 17l-5-5" /></svg
+                >
+                {$t("Saved")}
+              {:else}
+                {$t("Save")}
+              {/if}
+            </button>
+            <button
+              class="close-btn"
+              onclick={closeSettings}
+              aria-label="Close settings"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                width="18"
+                height="18"><path d="M18 6 6 18M6 6l12 12" /></svg
+              >
+            </button>
+          </div>
+        </div>
+        <div class="settings-body">
+          <SchemaForm bind:settingsProps />
         </div>
         {#if settingsProps.type === "adb"}
           <div class="quick-actions">
             {#if adbQuickActions.length > 0}
-              <div class="quick-actions-title">{$t("Display Utilities")}</div>
-              <div class="quick-actions-grid">
-                {#each adbQuickActions as action}
-                  <button
-                    class="action-btn"
-                    onclick={() => handleQuickAction(action)}
-                  >
-                    {action.label}
-                  </button>
-                {/each}
-              </div>
+              {#each adbQuickActions as action}
+                <button
+                  class="action-chip"
+                  onclick={() => handleQuickAction(action)}
+                >
+                  {action.label}
+                </button>
+              {/each}
             {/if}
-            <div class="quick-actions-title" style="margin-top: 16px;">
-              {$t("Debug")}
-            </div>
-            <div class="quick-actions-grid">
-              <button
-                class="action-btn"
-                onclick={() => {
-                  callDebug();
-                  closeSettings();
-                }}
-              >
-                {$t("Run Debug Routine")}
-              </button>
-            </div>
+            <button
+              class="action-chip"
+              onclick={() => {
+                callDebug();
+                closeSettings();
+              }}
+            >
+              {$t("Run Debug Routine")}
+            </button>
           </div>
         {/if}
-        <div class="settings-body">
-          <SchemaForm bind:settingsProps {onFormSubmit} />
-        </div>
       </div>
     </div>
   {/if}
@@ -507,7 +546,7 @@
   }
 
   .settings-header {
-    padding: 14px 20px;
+    padding: 12px 16px 12px 20px;
     border-bottom: 1px solid var(--line);
     display: flex;
     align-items: center;
@@ -517,46 +556,68 @@
   }
 
   .settings-title {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--text-1);
+    letter-spacing: -0.005em;
+  }
+
+  .settings-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .save-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: white;
+    font-weight: 700;
+    font-size: 12.5px;
+    transition:
+      filter var(--dur-1),
+      background var(--dur-1);
+  }
+
+  .save-btn:hover:not(:disabled) {
+    filter: brightness(1.1);
+  }
+
+  .save-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  .save-btn.success {
+    background: var(--ok);
   }
 
   .quick-actions {
-    padding: 14px 20px;
-    background: var(--bg-1);
-    border-bottom: 1px solid var(--line);
+    padding: 12px 16px;
+    background: var(--bg-2);
+    border-top: 1px solid var(--line);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
-  .quick-actions-title {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-4);
-    margin-bottom: 12px;
-  }
-
-  .quick-actions-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
-
-  .action-btn {
-    padding: 10px;
+  .action-chip {
+    padding: 6px 12px;
     background: var(--bg-1);
     border: 1px solid var(--line);
-    border-radius: 8px;
-    font-size: 13px;
+    border-radius: 999px;
+    font-size: 12px;
     font-weight: 500;
     color: var(--text-2);
     cursor: pointer;
-    transition: all 0.2s ease;
-    text-align: center;
+    transition: all var(--dur-1);
   }
 
-  .action-btn:hover {
+  .action-chip:hover {
     border-color: var(--accent);
     color: var(--accent);
     background: var(--accent-ghost);
@@ -564,14 +625,17 @@
 
   .settings-body {
     flex: 1;
-    overflow-y: auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
   }
 
   .close-btn {
     color: var(--text-3);
     transition: all var(--dur-1);
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     display: grid;
     place-items: center;
     border-radius: 8px;
@@ -580,5 +644,20 @@
   .close-btn:hover {
     background: var(--bg-hover);
     color: var(--text-1);
+  }
+
+  .spinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>

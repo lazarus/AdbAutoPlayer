@@ -1,7 +1,5 @@
 <script lang="ts">
   import { t } from "$lib/i18n/i18n";
-  import { onMount } from "svelte";
-  import { showErrorToast } from "$lib/toast/toast-error";
   import type { JSONSchema } from "json-schema-to-typescript";
   import CheckboxArray from "$lib/form/components/CheckboxArray.svelte";
   import ImageCheckboxArray from "$lib/form/components/ImageCheckboxArray.svelte";
@@ -13,15 +11,9 @@
 
   let {
     settingsProps = $bindable(),
-    onFormSubmit,
   }: {
     settingsProps: SettingsProps;
-    onFormSubmit: () => void;
   } = $props();
-
-  let isSaving = $state(false);
-  let saveSuccess = $state(false);
-  let openSections = $state(new Set<string>());
 
   interface Section {
     key: string;
@@ -78,382 +70,263 @@
     return prop;
   }
 
-  async function handleSave(): Promise<void> {
-    const formElement = document.getElementById(
-      "schema-form",
-    ) as HTMLFormElement;
+  let activeSectionKey = $state<string>("");
 
-    if (formElement && !formElement.checkValidity()) {
-      formElement.reportValidity();
-      return;
+  $effect(() => {
+    // Auto-select the first section when sections change
+    if (
+      sections.length > 0 &&
+      !sections.find((s) => s.key === activeSectionKey)
+    ) {
+      activeSectionKey = sections[0].key;
     }
-
-    isSaving = true;
-    void (async () => {
-      await onFormSubmit();
-      isSaving = false;
-      saveSuccess = true;
-      setTimeout(() => (saveSuccess = false), 2000);
-    })();
-  }
-
-  function toggleSection(key: string) {
-    if (openSections.has(key)) {
-      openSections.delete(key);
-    } else {
-      openSections.add(key);
-    }
-    openSections = new Set(openSections);
-  }
-
-  onMount(() => {
-    // Open the first section by default
-    if (sections.length > 0) {
-      openSections.add(sections[0].key);
-    }
-    return () => {
-      isSaving = false;
-    };
   });
+
+  const activeSection = $derived(
+    sections.find((s) => s.key === activeSectionKey) ?? sections[0],
+  );
 </script>
 
-<div class="schema-form-container">
-  <form
-    id="schema-form"
-    class="settings-form"
-    onsubmit={(e) => e.preventDefault()}
-  >
-    <div class="sections-list">
-      {#each sections as { key, schema }}
-        {@const isOpen = openSections.has(key)}
-        <div class="form-section" class:open={isOpen}>
-          <button
-            type="button"
-            class="section-header"
-            onclick={() => toggleSection(key)}
-          >
-            <span class="section-title">{$t(schema.title ?? key)}</span>
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              width="14"
-              height="14"
-              class="chevron"
-              style="transform: {isOpen ? 'rotate(180deg)' : 'rotate(0)'}"
-            >
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </button>
+<form id="schema-form" class="schema-form" onsubmit={(e) => e.preventDefault()}>
+  {#if sections.length > 1}
+    <div class="tab-bar" role="tablist">
+      {#each sections as section}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeSectionKey === section.key}
+          class="tab"
+          class:active={activeSectionKey === section.key}
+          onclick={() => (activeSectionKey = section.key)}
+        >
+          {$t(section.schema.title ?? section.key)}
+        </button>
+      {/each}
+    </div>
+  {/if}
 
-          {#if isOpen}
-            <div class="section-content">
-              {#each Object.entries(schema.properties ?? {}) as [propKey, prop]}
-                {@const arraySchema = asArraySchema(prop)}
-                {@const choices = asNonEmptyStringArray(prop)}
+  {#if activeSection}
+    {@const { key, schema } = activeSection}
+    <div class="section-content">
+      {#each Object.entries(schema.properties ?? {}) as [propKey, prop]}
+        {@const arraySchema = asArraySchema(prop)}
+        {@const choices = asNonEmptyStringArray(prop)}
 
-                <div class="field-row">
-                  {#if arraySchema && arraySchema.items.enum && Array.isArray(settingsProps.formData[key]?.[propKey]) && choices}
-                    {#if prop.formType === "TaskList"}
-                      <TaskList
-                        {choices}
-                        bind:value={settingsProps.formData[key][propKey] as any}
-                      />
-                    {:else if prop.formType === "AlnumGroupedCheckboxArray"}
-                      <AlnumGroupedCheckboxArray
-                        title={$t(arraySchema.title ?? propKey)}
-                        {choices}
-                        bind:value={settingsProps.formData[key][propKey] as any}
-                      />
-                    {:else}
-                      <!-- svelte-ignore a11y_label_has_associated_control -->
-                      <label class="field-label"
-                        >{$t(arraySchema.title ?? propKey)}</label
-                      >
-                      <div class="field-control">
-                        {#if arraySchema.formType === "ImageCheckboxArray"}
-                          <ImageCheckboxArray
-                            {choices}
-                            assetPath={arraySchema.assetPath as string}
-                            bind:value={
-                              settingsProps.formData[key][propKey] as any
-                            }
-                          />
-                        {:else}
-                          <CheckboxArray
-                            {choices}
-                            bind:value={
-                              settingsProps.formData[key][propKey] as any
-                            }
-                          />
-                        {/if}
-                      </div>
-                    {/if}
-                  {:else if arraySchema && arraySchema.items.type === "string" && Array.isArray(settingsProps.formData[key]?.[propKey])}
-                    <div class="full-width-field">
-                      <!-- svelte-ignore a11y_label_has_associated_control -->
-                      <label class="field-label-alt"
-                        >{$t(arraySchema.title ?? propKey)}</label
-                      >
-                      <StringArray
-                        bind:value={settingsProps.formData[key][propKey] as any}
-                        minItems={arraySchema.minItems}
-                      />
-                    </div>
-                  {:else}
-                    <label for={`${key}-${propKey}`} class="field-label">
-                      {$t(prop.title ?? propKey)}
-                    </label>
-
-                    <div class="field-control">
-                      {#if prop.enum}
-                        <select
-                          id={`${key}-${propKey}`}
-                          class="select"
-                          bind:value={settingsProps.formData[key][propKey]}
-                        >
-                          {#each prop.enum as option}
-                            <option value={option}>{$t(String(option))}</option>
-                          {/each}
-                        </select>
-                      {:else if prop.type === "boolean"}
-                        <label class="toggle-switch">
-                          <input
-                            id={`${key}-${propKey}`}
-                            type="checkbox"
-                            bind:checked={
-                              () =>
-                                Boolean(settingsProps.formData[key]?.[propKey]),
-                              (v) => (settingsProps.formData[key][propKey] = v)
-                            }
-                          />
-                          <span class="slider"></span>
-                        </label>
-                      {:else if prop.type === "integer" || prop.type === "number"}
-                        {#if prop.formType === "slider"}
-                          <div class="slider-container">
-                            <input
-                              id={`${key}-${propKey}`}
-                              type="range"
-                              class="range-input"
-                              min={prop.minimum}
-                              max={prop.maximum}
-                              step={prop.multipleOf ??
-                                (prop.type === "integer" ? 1 : 0.1)}
-                              bind:value={settingsProps.formData[key][propKey]}
-                            />
-                            <span class="range-value"
-                              >{settingsProps.formData[key][propKey]}</span
-                            >
-                          </div>
-                        {:else}
-                          <input
-                            id={`${key}-${propKey}`}
-                            type="number"
-                            class="input"
-                            min={prop.minimum}
-                            max={prop.maximum}
-                            step={prop.multipleOf ??
-                              (prop.type === "integer" ? 1 : "any")}
-                            bind:value={settingsProps.formData[key][propKey]}
-                          />
-                        {/if}
-                      {:else}
-                        <input
-                          id={`${key}-${propKey}`}
-                          type="text"
-                          class="input"
-                          bind:value={settingsProps.formData[key][propKey]}
-                          {...prop.regex ? { pattern: prop.regex } : {}}
-                          {...prop.htmlTitle ? { title: prop.htmlTitle } : {}}
-                        />
-                      {/if}
-                    </div>
-                  {/if}
+        <div class="field">
+          {#if arraySchema && arraySchema.items.enum && Array.isArray(settingsProps.formData[key]?.[propKey]) && choices}
+            {#if prop.formType === "TaskList"}
+              <div class="field-label">{$t(arraySchema.title ?? propKey)}</div>
+              <TaskList
+                {choices}
+                bind:value={settingsProps.formData[key][propKey] as any}
+              />
+            {:else if prop.formType === "AlnumGroupedCheckboxArray"}
+              <AlnumGroupedCheckboxArray
+                title={$t(arraySchema.title ?? propKey)}
+                {choices}
+                bind:value={settingsProps.formData[key][propKey] as any}
+              />
+            {:else}
+              <div class="field-label">{$t(arraySchema.title ?? propKey)}</div>
+              {#if arraySchema.formType === "ImageCheckboxArray"}
+                <ImageCheckboxArray
+                  {choices}
+                  assetPath={arraySchema.assetPath as string}
+                  bind:value={settingsProps.formData[key][propKey] as any}
+                />
+              {:else}
+                <CheckboxArray
+                  {choices}
+                  bind:value={settingsProps.formData[key][propKey] as any}
+                />
+              {/if}
+            {/if}
+          {:else if arraySchema && arraySchema.items.type === "string" && Array.isArray(settingsProps.formData[key]?.[propKey])}
+            <div class="field-label">{$t(arraySchema.title ?? propKey)}</div>
+            <StringArray
+              bind:value={settingsProps.formData[key][propKey] as any}
+              minItems={arraySchema.minItems}
+            />
+          {:else if prop.type === "boolean"}
+            <!-- Boolean: inline label + toggle on right -->
+            <label class="field-toggle" for={`${key}-${propKey}`}>
+              <span class="field-toggle-text">
+                <span class="field-label-inline">
+                  {$t(prop.title ?? propKey)}
+                </span>
+                {#if prop.description}
+                  <span class="field-hint">{$t(prop.description)}</span>
+                {/if}
+              </span>
+              <span class="toggle-switch">
+                <input
+                  id={`${key}-${propKey}`}
+                  type="checkbox"
+                  bind:checked={
+                    () => Boolean(settingsProps.formData[key]?.[propKey]),
+                    (v) => (settingsProps.formData[key][propKey] = v)
+                  }
+                />
+                <span class="slider"></span>
+              </span>
+            </label>
+          {:else}
+            <label class="field-label" for={`${key}-${propKey}`}>
+              {$t(prop.title ?? propKey)}
+            </label>
+            {#if prop.description}
+              <div class="field-hint">{$t(prop.description)}</div>
+            {/if}
+            {#if prop.enum}
+              <select
+                id={`${key}-${propKey}`}
+                class="control select"
+                bind:value={settingsProps.formData[key][propKey]}
+              >
+                {#each prop.enum as option}
+                  <option value={option}>{$t(String(option))}</option>
+                {/each}
+              </select>
+            {:else if prop.type === "integer" || prop.type === "number"}
+              {#if prop.formType === "slider"}
+                <div class="slider-container">
+                  <input
+                    id={`${key}-${propKey}`}
+                    type="range"
+                    class="range-input"
+                    min={prop.minimum}
+                    max={prop.maximum}
+                    step={prop.multipleOf ??
+                      (prop.type === "integer" ? 1 : 0.1)}
+                    bind:value={settingsProps.formData[key][propKey]}
+                  />
+                  <span class="range-value"
+                    >{settingsProps.formData[key][propKey]}</span
+                  >
                 </div>
-              {/each}
-            </div>
+              {:else}
+                <input
+                  id={`${key}-${propKey}`}
+                  type="number"
+                  class="control"
+                  min={prop.minimum}
+                  max={prop.maximum}
+                  step={prop.multipleOf ??
+                    (prop.type === "integer" ? 1 : "any")}
+                  bind:value={settingsProps.formData[key][propKey]}
+                />
+              {/if}
+            {:else}
+              <input
+                id={`${key}-${propKey}`}
+                type="text"
+                class="control"
+                bind:value={settingsProps.formData[key][propKey]}
+                {...prop.regex ? { pattern: prop.regex } : {}}
+                {...prop.htmlTitle ? { title: prop.htmlTitle } : {}}
+              />
+            {/if}
           {/if}
         </div>
       {/each}
     </div>
-
-    <div class="form-footer">
-      <button
-        type="button"
-        class="save-btn"
-        class:success={saveSuccess}
-        disabled={isSaving}
-        onclick={handleSave}
-      >
-        {#if isSaving}
-          <span class="spinner"></span>
-          {$t("Save Settings")}
-        {:else if saveSuccess}
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            width="14"
-            height="14"><path d="M20 6 9 17l-5-5" /></svg
-          >
-          {$t("Saved")}
-        {:else}
-          {$t("Save Settings")}
-        {/if}
-      </button>
-    </div>
-  </form>
-</div>
+  {/if}
+</form>
 
 <style>
-  .schema-form-container {
+  .schema-form {
     display: flex;
     flex-direction: column;
     height: 100%;
     background: var(--bg-1);
   }
 
-  .settings-form {
+  .tab-bar {
     display: flex;
-    flex-direction: column;
-    height: 100%;
+    gap: 2px;
+    padding: 8px 16px 0;
+    border-bottom: 1px solid var(--line);
+    overflow-x: auto;
   }
 
-  .sections-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .form-section {
-    border-radius: 12px;
-    background: var(--bg-1);
-    border: 1px solid var(--line);
-    overflow: hidden;
-    transition: all var(--dur-1);
-  }
-
-  .form-section.open {
-    border-color: var(--line-hi);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-
-  .section-header {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 18px;
-    background: var(--bg-2);
-    border-bottom: 1px solid transparent;
-    transition: all var(--dur-1);
+  .tab {
+    padding: 8px 14px;
+    border: 0;
+    background: transparent;
+    color: var(--text-3);
+    font-size: 12.5px;
+    font-weight: 600;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition:
+      color var(--dur-1),
+      border-color var(--dur-1);
+    white-space: nowrap;
     cursor: pointer;
   }
 
-  .section-header:hover {
-    background: var(--bg-hover);
+  .tab:hover {
+    color: var(--text-1);
   }
 
-  .form-section.open .section-header {
-    border-bottom-color: var(--line);
-    background: var(--bg-1);
-  }
-
-  .section-title {
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    color: var(--text-2);
-  }
-
-  .chevron {
-    color: var(--text-4);
-    transition: transform var(--dur-1);
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
   }
 
   .section-content {
-    padding: 18px;
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 18px;
   }
 
-  .field-row {
+  .field {
     display: flex;
-    align-items: center;
-    gap: 16px;
+    flex-direction: column;
+    gap: 6px;
   }
 
   .field-label {
-    flex: 0 0 140px;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-3);
-    text-align: right;
-  }
-
-  .field-label-alt {
-    display: block;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
+    color: var(--text-1);
+  }
+
+  .field-hint {
+    font-size: 11.5px;
     color: var(--text-3);
-    margin-bottom: 8px;
+    line-height: 1.4;
   }
 
-  .field-control {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .full-width-field {
+  .control {
     width: 100%;
-  }
-
-  .form-footer {
-    padding: 16px;
-    border-top: 1px solid var(--line);
+    padding: 8px 10px;
+    border-radius: 8px;
     background: var(--bg-2);
+    border: 1px solid var(--line);
+    color: var(--text-1);
+    font-size: 13px;
+    font-family: inherit;
+    transition:
+      border-color var(--dur-1),
+      box-shadow var(--dur-1);
   }
 
-  .save-btn {
-    width: 100%;
-    padding: 12px;
-    border-radius: 10px;
-    background: var(--accent);
-    color: white;
-    font-weight: 700;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: all var(--dur-1);
-    box-shadow: 0 4px 12px color-mix(in oklab, var(--accent) 25%, transparent);
+  .control:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-ring);
   }
 
-  .save-btn:hover:not(:disabled) {
-    filter: brightness(1.1);
-    transform: translateY(-1px);
-  }
-
-  .save-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .save-btn.success {
-    background: var(--ok);
-    box-shadow: 0 4px 12px color-mix(in oklab, var(--ok) 25%, transparent);
+  .select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a3a3a3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
   }
 
   .select option {
@@ -461,8 +334,28 @@
     color: var(--text-1);
   }
 
-  .select:focus option {
-    background-color: var(--bg-1);
+  /* Boolean field: inline row */
+  .field-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 0;
+    cursor: pointer;
+  }
+
+  .field-toggle-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .field-label-inline {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-1);
   }
 
   .toggle-switch {
@@ -470,6 +363,7 @@
     display: inline-block;
     width: 36px;
     height: 20px;
+    flex-shrink: 0;
   }
 
   .toggle-switch input {
@@ -510,21 +404,7 @@
     background-color: var(--accent);
   }
 
-  .spinner {
-    width: 14px;
-    height: 14px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
+  /* Range slider */
   .slider-container {
     display: flex;
     align-items: center;
@@ -559,10 +439,11 @@
   }
 
   .range-value {
-    min-width: 32px;
+    min-width: 40px;
+    font-family: var(--font-mono);
     font-size: 12px;
-    font-weight: 700;
-    color: var(--text-2);
+    font-weight: 600;
+    color: var(--text-1);
     text-align: right;
   }
 </style>
