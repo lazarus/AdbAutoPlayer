@@ -57,6 +57,11 @@ class AFKJourneyBase(Navigation, HeroScannerMixin, Game):
     # Timeout constants (in seconds)
     BATTLE_TIMEOUT: int = 240
 
+    # Tap coordinates
+    BATTLE_START_TAP = Point(x=850, y=1780)
+    BATTLE_DISMISS_TAP = Point(x=550, y=1800)
+    BATTLE_RESULT_DISMISS_TAP = Point(x=950, y=1800)
+
     @property
     def min_timeout(self) -> float:
         return self.template_timeout
@@ -476,12 +481,12 @@ class AFKJourneyBase(Navigation, HeroScannerMixin, Game):
 
         try:
             # Tap immediately to avoid skipping due to visual glitches
-            self.tap(Point(x=850, y=1780))
+            self.tap(self.BATTLE_START_TAP)
             self._tap_coordinates_till_template_disappears(
-                coordinates=Point(x=850, y=1780),
+                coordinates=self.BATTLE_START_TAP,
                 template=result.template,
                 crop_regions=CropRegions(top=0.5),
-                delay=2.0,
+                tap_delay=2.0,
             )
         except GameActionFailedError:
             logging.warning("Failed to start Battle, are no Heroes selected?")
@@ -663,13 +668,13 @@ class AFKJourneyBase(Navigation, HeroScannerMixin, Game):
                 result = True
 
             case "battle/victory_rewards.png":
-                self.tap(Point(x=550, y=1800))
+                self.tap(self.BATTLE_DISMISS_TAP)
                 result = True
 
             case "battle/power_up.png":
                 if self.battle_state.mode == Mode.DURAS_TRIALS:
                     self.tap(
-                        Point(x=550, y=1800),
+                        self.BATTLE_DISMISS_TAP,
                         log_message=f"Lost Battle #{attempt}, retrying",
                     )
                     self.sleep_navigation()
@@ -679,7 +684,7 @@ class AFKJourneyBase(Navigation, HeroScannerMixin, Game):
                     # TODO should probably just throw an Exception
                     # I have no idea what this case is used for
                     # should leave comments in the future
-                    self.tap(Point(x=550, y=1800))
+                    self.tap(self.BATTLE_DISMISS_TAP)
 
             case "navigation/confirm.png":
                 # TODO should probably just throw an Exception
@@ -701,7 +706,7 @@ class AFKJourneyBase(Navigation, HeroScannerMixin, Game):
                 result = False
 
             case "battle/result.png":
-                self.tap(Point(x=950, y=1800))
+                self.tap(self.BATTLE_RESULT_DISMISS_TAP)
                 result = True
 
             case "afk_stages/tap_to_close.png" | "legend_trials/available_after.png":

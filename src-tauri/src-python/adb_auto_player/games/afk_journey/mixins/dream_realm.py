@@ -14,11 +14,8 @@ from adb_auto_player.models.geometry import Point
 class DreamRealmMixin(AFKJourneyBase):
     """Dream Realm Mixin."""
 
-    def __init__(self) -> None:
-        """Initialize DreamRealmMixin."""
-        super().__init__()
-        # Battle and Skip buttons are in the same coordinates.
-        self.battle_skip_coord = Point(550, 1790)
+    # Battle and Skip buttons are in the same coordinates.
+    BATTLE_SKIP_TAP = Point(550, 1790)
 
     @register_command(
         name="DreamRealm",
@@ -51,7 +48,7 @@ class DreamRealmMixin(AFKJourneyBase):
     def _start_dr(self) -> None:
         """Start Dream Realm battle."""
         # No logging because spam from trival method.
-        self.tap(self.battle_skip_coord)
+        self.tap(self.BATTLE_SKIP_TAP)
         sleep(2)
 
     def _stop_condition(self, spend_gold: bool, daily: bool) -> bool:
@@ -99,7 +96,7 @@ class DreamRealmMixin(AFKJourneyBase):
             return True
 
         logging.debug("Looking for more DR attempts...")
-        self.tap(self.battle_skip_coord)
+        self.tap(self.BATTLE_SKIP_TAP)
 
         try:
             buy = self.wait_for_template(

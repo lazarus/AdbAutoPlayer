@@ -19,6 +19,9 @@ from ..gui_category import AFKJCategory
 class AFKStagesMixin(AFKJourneyBase):
     """AFK Stages Mixin."""
 
+    SEASON_AFK_STAGES_BUTTON = Point(x=300, y=1610)
+    AFK_STAGES_BATTLE_BUTTON = Point(x=800, y=1610)
+
     @register_command(
         name="AFKStages",
         gui=GUIMetadata(
@@ -80,12 +83,12 @@ class AFKStagesMixin(AFKJourneyBase):
         """Selects an AFK stage template."""
         if self.battle_state.mode == Mode.SEASON_AFK_STAGES:
             self.tap(
-                Point(x=300, y=1610),
+                self.SEASON_AFK_STAGES_BUTTON,
                 log_message="Clicking Season AFK Stages button",
             )
         else:
             self.tap(
-                Point(x=800, y=1610),
+                self.AFK_STAGES_BATTLE_BUTTON,
                 log_message="Clicking Battle button",
             )
         self.sleep_navigation()

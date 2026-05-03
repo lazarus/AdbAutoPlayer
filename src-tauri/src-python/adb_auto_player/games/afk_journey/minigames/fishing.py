@@ -18,6 +18,7 @@ from ..gui_category import AFKJCategory
 
 STRONG_PULL = Point(780, 1290)
 FISHING_ROD = Point(535, 1450)
+FISH_CATCH_DISMISS_TAP = Point(500, 1700)
 DISTANCE_600 = 600
 DISTANCE_400 = 400
 DISTANCE_200 = 200
@@ -85,7 +86,7 @@ class Fishing(AFKJourneyBase):
     def close_fish_catch_popup(self) -> None:
         # Originally tried with back button but can lead to exiting minigame
         # clicking somewhere at the bottom-ish of the screen seems safer
-        self.tap(Point(500, 1700))
+        self.tap(FISH_CATCH_DISMISS_TAP)
         sleep(2)
 
     def fishing(self) -> None:

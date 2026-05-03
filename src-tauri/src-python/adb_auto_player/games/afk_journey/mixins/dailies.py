@@ -44,6 +44,7 @@ class DailiesMixin(
     AFFINITY_HERO_CLICK = Point(540, 840)
     AFFINITY_NEXT_HERO = Point(995, 1090)
     ESSENCE_SWAP_CLOSE_TAP = Point(550, 200)
+    BACK_BUTTON_FALLBACK = Point(100, 1800)
 
     def __init__(self) -> None:
         """Initialize Dailies Mixin."""
@@ -541,7 +542,7 @@ class DailiesMixin(
     def _click_hero(self) -> None:
         """Click a hero for affinity and go next."""
         back = self.game_find_template_match("back.png")
-        back_button: Point = back.box.center if back else Point(100, 1800)
+        back_button: Point = back.box.center if back else self.BACK_BUTTON_FALLBACK
 
         for _ in range(3):
             # NOTE: Sometimes spam click works and other times not.
