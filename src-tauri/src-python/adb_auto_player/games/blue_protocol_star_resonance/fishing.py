@@ -32,6 +32,36 @@ class Fishing(BlueProtocolStarResonance):
     FISHING_POLE_BUTTON = Point(1740, 890)
     FISHING_POLE_INVENTORY_BUTTON = Point(400, 960)
     BAIT_INVENTORY_BUTTON = Point(250, 960)
+    FISH_HOOKED_EXCLAMATION_MARK = Box(
+        top_left=Point(943, 548),
+        width=28,
+        height=24,
+    )
+    LEFT_HELP_ARROW_BOX = Box(
+        top_left=Point(815, 530),
+        width=50,
+        height=25,
+    )
+    RIGHT_HELP_ARROW_BOX = Box(
+        top_left=Point(1050, 530),
+        width=50,
+        height=25,
+    )
+    REEL_CROP_BOX = Box(
+        top_left=Point(1270, 883),
+        width=24,
+        height=24,
+    )
+    FISHING_POLE_BROKEN_CROP_BOX = Box(
+        top_left=Point(444, 898),
+        width=12,
+        height=12,
+    )
+    BAIT_EMPTY_CROP_BOX = Box(
+        top_left=Point(294, 898),
+        width=12,
+        height=12,
+    )
 
     fish_caught_count = 0
     joystick_direction: HorizontalDirection = HorizontalDirection.CENTER
@@ -131,11 +161,7 @@ class Fishing(BlueProtocolStarResonance):
     def is_fishing_pole_broken(self) -> bool:
         cropped = Cropping.crop_to_box(
             self.get_screenshot(),
-            Box(
-                top_left=Point(444, 898),
-                width=12,
-                height=12,
-            ),
+            self.FISHING_POLE_BROKEN_CROP_BOX,
         )
 
         return TemplateMatcher.similar_image(
@@ -170,11 +196,7 @@ class Fishing(BlueProtocolStarResonance):
     def is_bait_empty(self) -> bool:
         cropped = Cropping.crop_to_box(
             self.get_screenshot(),
-            Box(
-                top_left=Point(294, 898),
-                width=12,
-                height=12,
-            ),
+            self.BAIT_EMPTY_CROP_BOX,
         )
 
         return TemplateMatcher.similar_image(
@@ -229,17 +251,11 @@ class Fishing(BlueProtocolStarResonance):
     ) -> bool:
         timeout = monotonic() + 30
         while monotonic() < timeout:
-            fish_hooked_exclamation_mark = Box(
-                top_left=Point(943, 548),
-                width=28,
-                height=24,
-            )
-
             if (
                 get_color_match_percentage(
                     image=Cropping.crop_to_box(
                         self.get_screenshot(),
-                        fish_hooked_exclamation_mark,
+                        self.FISH_HOOKED_EXCLAMATION_MARK,
                     ).image,
                     min_red=240,
                     max_green=120,
@@ -258,7 +274,10 @@ class Fishing(BlueProtocolStarResonance):
             if monotonic() - start_time > timeout:
                 logging.error("Failed to start reeling")
                 return
-            pass
+            if self.get_continue_fishing_button():
+                self.fish_caught_count += 1
+                logging.info(f"Fish caught: {self.fish_caught_count}")
+                return
 
         self.start_reeling()
         while True:
@@ -295,20 +314,24 @@ class Fishing(BlueProtocolStarResonance):
         return
 
     def start_reeling(self) -> None:
-        if not self.is_reeling:
-            if self.virtual_touch:
-                self.virtual_touch.hold(self.FISHING_POLE_BUTTON)
-            else:
-                self.device.hold_down(self.FISHING_POLE_BUTTON)
-            self.is_reeling = True
+        if self.is_reeling:
+            return
+
+        if self.virtual_touch:
+            self.virtual_touch.hold(self.FISHING_POLE_BUTTON)
+        else:
+            self.device.hold_down(self.FISHING_POLE_BUTTON)
+        self.is_reeling = True
 
     def stop_reeling(self) -> None:
-        if self.is_reeling:
-            if self.virtual_touch:
-                self.virtual_touch.release()
-            else:
-                self.device.hold_release(self.FISHING_POLE_BUTTON)
-            self.is_reeling = False
+        if not self.is_reeling:
+            return
+
+        if self.virtual_touch:
+            self.virtual_touch.release()
+        else:
+            self.device.hold_release(self.FISHING_POLE_BUTTON)
+        self.is_reeling = False
 
     def step_joystick_towards_fish(
         self,
@@ -317,17 +340,11 @@ class Fishing(BlueProtocolStarResonance):
         max_green: int = 150,
         max_blue: int = 30,
     ) -> bool:
-        left_help_arrow_box = Box(
-            top_left=Point(815, 530),
-            width=50,
-            height=25,
-        )
-
         if (
             get_color_match_percentage(
                 image=Cropping.crop_to_box(
                     self.get_screenshot(),
-                    left_help_arrow_box,
+                    self.LEFT_HELP_ARROW_BOX,
                 ).image,
                 min_red=min_red,
                 max_green=max_green,
@@ -338,17 +355,11 @@ class Fishing(BlueProtocolStarResonance):
             self.step_left()
             return True
 
-        right_help_arrow_box = Box(
-            top_left=Point(1050, 530),
-            width=50,
-            height=25,
-        )
-
         if (
             get_color_match_percentage(
                 image=Cropping.crop_to_box(
                     self.get_screenshot(),
-                    right_help_arrow_box,
+                    self.RIGHT_HELP_ARROW_BOX,
                 ).image,
                 min_red=min_red,
                 max_green=max_green,
@@ -363,11 +374,7 @@ class Fishing(BlueProtocolStarResonance):
     def is_ready_to_reel(self):
         cropped = Cropping.crop_to_box(
             self.get_screenshot(),
-            Box(
-                top_left=Point(1270, 883),
-                width=24,
-                height=24,
-            ),
+            self.REEL_CROP_BOX,
         )
 
         return TemplateMatcher.similar_image(
@@ -458,9 +465,8 @@ def get_color_match_percentage(
     max_blue: int = 20,
 ) -> float:
     """Returns the percentage of pixels that match the color."""
-    mask = (
+    return (
         (image[:, :, 2] >= min_red)
         & (image[:, :, 1] <= max_green)
         & (image[:, :, 0] <= max_blue)
-    )
-    return np.sum(mask) / mask.size
+    ).mean()

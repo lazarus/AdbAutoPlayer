@@ -27,6 +27,7 @@ class SeasonLegendTrial(AFKJourneyBase):
         gui=GUIMetadata(
             label="Season Legend Trial",
             category=AFKJCategory.GAME_MODES,
+            tooltip="Challenge the seasonal Legend Trial towers automatically",
         ),
     )
     @register_custom_routine_choice(label="Season Legend Trial")
@@ -60,6 +61,7 @@ class SeasonLegendTrial(AFKJourneyBase):
                 logging.info(f"{faction}s excluded in Settings")
                 continue
 
+            self.sleep_navigation()  # Give the UI time to load icons
             if self.game_find_template_match(
                 template=(
                     f"legend_trials/faction_icon_{self.battle_state.faction_lower}.png"
@@ -69,11 +71,13 @@ class SeasonLegendTrial(AFKJourneyBase):
                 logging.warning(f"{faction} Tower not available today")
                 continue
 
-            result = self.game_find_template_match(
-                template=f"legend_trials/banner_{self.battle_state.faction_lower}.png",
-                crop_regions=CropRegions(left=0.2, right=0.3, top=0.2, bottom=0.1),
-            )
-            if result is None:
+            try:
+                result = self.wait_for_template(
+                    template=f"legend_trials/banner_{self.battle_state.faction_lower}.png",
+                    crop_regions=CropRegions(left=0.1, right=0.1, top=0.1, bottom=0.1),
+                    timeout=5,
+                )
+            except GameTimeoutError:
                 logging.error(f"{faction}s Tower not found")
                 continue
 
@@ -147,7 +151,7 @@ class SeasonLegendTrial(AFKJourneyBase):
             threshold=ConfidenceValue("80%"),
             grayscale=True,
             crop_regions=CropRegions(left=0.3, right=0.3, top=0.2, bottom=0.2),
-            timeout=self.MIN_TIMEOUT,
+            timeout=self.min_timeout,
             timeout_message="Cannot find Challenge button "
             "assuming Trial is already cleared",
         )

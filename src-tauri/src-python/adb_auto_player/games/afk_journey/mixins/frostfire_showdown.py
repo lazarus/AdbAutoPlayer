@@ -108,6 +108,7 @@ class FrostfireShowdownMixin(AFKJourneyBase, ABC):
         gui=GUIMetadata(
             label="Run Frostfire Showdown",
             category=AFKJCategory.EVENTS_AND_OTHER,
+            tooltip="Participate in the Frostfire Showdown event automatically",
         ),
     )
     def attempt_frostfire(self) -> None:
@@ -316,7 +317,9 @@ class FrostfireShowdownMixin(AFKJourneyBase, ABC):
         )
 
         if depleted_check is not None:
-            stamina_level = depleted_template.split("_")[-1].replace(".png", "")
+            stamina_level = depleted_template.rsplit("_", maxsplit=1)[-1].replace(
+                ".png", ""
+            )
             logging.info(
                 f"[Stamina Check] {hero_name} is DEPLETED ({stamina_level} stamina) - "
                 f"found on attempt {attempt}"

@@ -32,6 +32,7 @@ class SunlitShowdownMixin(AFKJourneyBase, ABC):
         gui=GUIMetadata(
             label="Run Sunlit Showdown",
             category=AFKJCategory.EVENTS_AND_OTHER,
+            tooltip="Participate in the Sunlit Showdown event automatically",
         ),
     )
     def attempt_sunlit(self) -> None:

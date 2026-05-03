@@ -89,9 +89,15 @@ class ArcaneLabyrinthMixin(AFKJourneyBase, ABC):
             "arcane_labyrinth/hold_to_exit.png",
             crop_regions=CropRegions(right=0.5, top=0.5, bottom=0.3),
             timeout_message="Failed to exit Arcane Labyrinth run",
-            timeout=self.MIN_TIMEOUT,
+            timeout=self.min_timeout,
         )
         sleep(1)
+        hold_to_exit = self.wait_for_template(
+            "arcane_labyrinth/hold_to_exit.png",
+            crop_regions=CropRegions(right=0.5, top=0.5, bottom=0.3),
+            timeout_message="Failed to exit Arcane Labyrinth run",
+            timeout=self.fast_timeout,
+        )
         self.hold(hold_to_exit, duration=5.0)
 
     def _add_keys_farmed(self, keys: int) -> None:
@@ -111,6 +117,7 @@ class ArcaneLabyrinthMixin(AFKJourneyBase, ABC):
         gui=GUIMetadata(
             label="Arcane Labyrinth",
             category=AFKJCategory.GAME_MODES,
+            tooltip="Complete the Arcane Labyrinth trial automatically",
         ),
     )
     @register_custom_routine_choice(
@@ -151,7 +158,7 @@ class ArcaneLabyrinthMixin(AFKJourneyBase, ABC):
             _ = self.wait_for_template(
                 "arcane_labyrinth/enter.png",
                 crop_regions=CropRegions(top=0.8, left=0.3),
-                timeout=self.MIN_TIMEOUT,
+                timeout=self.min_timeout,
             )
         logging.info("Arcane Labyrinth done.")
         logging.info(
@@ -351,7 +358,7 @@ class ArcaneLabyrinthMixin(AFKJourneyBase, ABC):
                 "arcane_labyrinth/quit_door.png",
             ],
             threshold=ConfidenceValue("70%"),
-            timeout=self.MIN_TIMEOUT,
+            timeout=self.min_timeout,
         )
         logging.info("Arcane Labyrinth entered")
 
@@ -384,7 +391,7 @@ class ArcaneLabyrinthMixin(AFKJourneyBase, ABC):
                 "arcane_labyrinth/heroes_icon.png",
             ],
             threshold=ConfidenceValue("70%"),
-            timeout=self.MIN_TIMEOUT,
+            timeout=self.min_timeout,
         )
         match result.template:
             case "arcane_labyrinth/enter.png":
@@ -550,7 +557,7 @@ class ArcaneLabyrinthMixin(AFKJourneyBase, ABC):
                     "arcane_labyrinth/select_a_crest.png",
                 ],
                 crop_regions=CropRegions(top=0.8),
-                timeout=self.MIN_TIMEOUT,
+                timeout=self.min_timeout,
             )
 
             match result.template:

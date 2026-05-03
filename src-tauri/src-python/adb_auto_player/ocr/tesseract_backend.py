@@ -60,11 +60,15 @@ def _patch_subprocess_popen():
                     first = cmd
                 first_str = str(first)
                 if "tesseract" in first_str.lower():
-                    kwargs.setdefault("creationflags", subprocess.CREATE_NO_WINDOW)  # type: ignore[unresolved-attribute]
+                    # CREATE_NO_WINDOW is a Windows-only constant (0x08000000)
+                    create_no_window = getattr(
+                        subprocess, "CREATE_NO_WINDOW", 0x08000000
+                    )
+                    kwargs.setdefault("creationflags", create_no_window)
             super().__init__(args, *popenargs, **kwargs)
 
     # we are overwriting Popen on purpose so it does not open a terminal window
-    subprocess.Popen = SilentPopen  # type: ignore[invalid-assignment]
+    subprocess.Popen = SilentPopen  # ty: ignore[invalid-assignment]
 
 
 @lru_cache(maxsize=1)
@@ -95,7 +99,7 @@ def _initialize_tesseract() -> None:
             if not os.path.isfile(fallback_path):
                 continue
 
-            pytesseract.tesseract_cmd = fallback_path  # type: ignore[invalid-assignment]
+            pytesseract.tesseract_cmd = fallback_path  # ty: ignore[invalid-assignment]
             tessdata = fallback_path.parent / "tessdata"
             # Tesseract will not accept Windows extended Path
             tessdata_prefix = str(tessdata.absolute()).removeprefix("\\\\?\\")

@@ -47,6 +47,7 @@ class Fishing(AFKJourneyBase):
         gui=GUIMetadata(
             label="Fishing",
             category=AFKJCategory.EVENTS_AND_OTHER,
+            tooltip="Automatically participate in the Fishing minigame",
         ),
         name="afk_journey.fishing",
     )
@@ -163,7 +164,7 @@ class Fishing(AFKJourneyBase):
         try:
             result = self.wait_for_any_template(
                 templates=fish_caught_templates + general_templates,
-                timeout=self.MIN_TIMEOUT,
+                timeout=self.min_timeout,
                 threshold=ConfidenceValue("70%"),
                 crop_regions=CropRegions(
                     bottom="20%",
@@ -202,7 +203,7 @@ class Fishing(AFKJourneyBase):
         _ = self.wait_for_any_template(
             templates=templates,
             crop_regions=CropRegions(left=0.3, right=0.3, top=0.5, bottom=0.2),
-            timeout=self.MIN_TIMEOUT,
+            timeout=self.min_timeout,
             delay=0.1,
             threshold=ConfidenceValue("70%"),
         )
@@ -219,7 +220,7 @@ class Fishing(AFKJourneyBase):
                 "fishing/fishing_rod_big",
             ],
             crop_regions=CropRegions(left=0.3, right=0.3, top=0.5, bottom=0.2),
-            timeout=self.MIN_TIMEOUT,
+            timeout=self.min_timeout,
             timeout_message="Cast Fishing Rod Button not found",
             threshold=ConfidenceValue("70%"),
         )
@@ -378,7 +379,7 @@ def _find_fishing_colors_fast(img: np.ndarray) -> tuple[int | None, int | None]:
     if contours:
         # Get largest contour
         largest_contour = max(contours, key=lambda c: cv2.contourArea(c))
-        x, y, w_box, h_box = cv2.boundingRect(largest_contour)
+        x, _y, w_box, _h_box = cv2.boundingRect(largest_contour)
         # This is a bit sketchy
         # The fishing circle box starts at the top middle so at the start you will
         # Want the left most x-coordinate (x)

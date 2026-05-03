@@ -70,42 +70,44 @@ class StringHelper:
         if len(pattern_lower) > len(text_lower):
             return False
 
+        # Fast path: exact substring match
+        if pattern_lower in text_lower:
+            return True
+
         # Check all possible substrings of text with the same length as pattern
+        matcher = SequenceMatcher(None, "", pattern_lower)
         for i in range(len(text_lower) - len(pattern_lower) + 1):
             substring = text_lower[i : i + len(pattern_lower)]
-            similarity = SequenceMatcher(None, substring, pattern_lower).ratio()
-            if similarity >= similarity_threshold:
+            matcher.set_seq1(substring)
+            if matcher.ratio() >= similarity_threshold:
                 return True
 
         return False
 
+    _sanitize_replacements: list[tuple[str, str]] | None = None
+
     @staticmethod
     def sanitize_path(log_message: str) -> str:
-        """Replaces the username in file paths with $USER or $env:USERNAME.
+        """Replaces the username in file paths with %USERPROFILE% or ~.
 
         Works with both Windows and Unix-style paths.
-
-        Args:
-            log_message (str): The log message containing file paths
-
-        Returns:
-            str: The sanitized log message with environment variable placeholders
         """
-        home_dir: str = os.path.expanduser("~")
+        if StringHelper._sanitize_replacements is None:
+            home_dir: str = os.path.expanduser("~")
+            replacements: list[tuple[str, str]] = []
 
-        if "\\" in home_dir:  # Windows path
-            username: str = home_dir.split("\\")[-1]
-            pattern: str = re.escape(f":\\Users\\{username}")
-            replacement = r":\\Users\\$env:USERNAME"
-            log_message = re.sub(pattern, replacement, log_message)
-            pattern = re.escape(f":\\\\Users\\\\{username}")
-            replacement = r":\\\\Users\\\\$env:USERNAME"
-            log_message = re.sub(pattern, replacement, log_message)
+            if "\\" in home_dir:  # Windows path
+                replacements.append((re.escape(home_dir), "%USERPROFILE%"))
+                # Handle double backslashes which often appear in JSON or escaped logs
+                replacements.append(
+                    (re.escape(home_dir.replace("\\", "\\\\")), "%USERPROFILE%")
+                )
+            else:  # Unix path (Linux: /home/user, macOS: /Users/user)
+                replacements.append((re.escape(home_dir), "~"))
 
-        else:  # Unix path
-            username = home_dir.split("/")[-1]
-            pattern = f"/home/{username}"
-            replacement = "/home/$USER"
+            StringHelper._sanitize_replacements = replacements
+
+        for pattern, replacement in StringHelper._sanitize_replacements:
             log_message = re.sub(pattern, replacement, log_message)
 
         return log_message

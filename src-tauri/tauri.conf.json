@@ -9,7 +9,7 @@
         "dragDropEnabled": false,
         "height": 600,
         "title": "AdbAutoPlayer",
-        "visible": false,
+        "visible": true,
         "width": 800
       }
     ]
@@ -17,7 +17,7 @@
   "build": {
     "beforeBuildCommand": "pnpm build",
     "beforeDevCommand": "pnpm dev",
-    "devUrl": "http://localhost:1420",
+    "devUrl": "http://127.0.0.1:1420",
     "features": [
       "pytauri/standalone"
     ],
@@ -47,5 +47,5 @@
     }
   },
   "productName": "AdbAutoPlayer",
-  "version": "0.1.0"
+  "version": "12.8.9"
 }

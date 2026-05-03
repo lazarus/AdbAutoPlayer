@@ -21,6 +21,7 @@ export type Trigger = ("adb-settings-updated" | "game-settings-updated")
  * @minItems 1
  */
 export type Profiles1 = [string, ...(string)[]]
+export type ActiveProfile = number
 /**
  * Theme Enum.
  */
@@ -29,11 +30,17 @@ export type Theme = ("catppuccin" | "cerberus" | "crimson" | "fennec" | "modern"
  * Locale Enum.
  */
 export type Locale = ("en" | "jp" | "vn")
+/**
+ * Log Panel Position Enum.
+ */
+export type LogPanelPosition = ("right" | "bottom")
 export type CloseButtonShouldMinimizeTheWindow = boolean
 export type DesktopNotifications = boolean
 export type DiscordWebhook = string
 export type LoggingLevel = ("DEBUG" | "INFO" | "WARNING" | "ERROR" | "FATAL")
 export type ShutdownAfterTasks = boolean
+export type RestartStuckTasks = boolean
+export type RestartGameIfTaskTakesLongerThanMinutes = number
 export type GameTitle = string
 export type Label1 = string
 export type Args1 = string[]
@@ -120,6 +127,7 @@ advanced?: Advanced
  */
 export interface Profiles {
 profiles?: Profiles1
+active_profile?: ActiveProfile
 [k: string]: unknown
 }
 /**
@@ -128,6 +136,7 @@ profiles?: Profiles1
 export interface UserInterface {
 theme?: Theme
 locale?: Locale
+log_panel_position?: LogPanelPosition
 close_should_minimize?: CloseButtonShouldMinimizeTheWindow
 [k: string]: unknown
 }
@@ -151,6 +160,8 @@ level?: LoggingLevel
  */
 export interface Advanced {
 shutdown_after_tasks?: ShutdownAfterTasks
+restart_stuck_task?: RestartStuckTasks
+restart_stuck_task_after_mins?: RestartGameIfTaskTakesLongerThanMinutes
 [k: string]: unknown
 }
 export interface ProfileStateUpdate {
@@ -165,6 +176,9 @@ device_id: DeviceId
 active_task: ActiveTask
 [k: string]: unknown
 }
+/**
+ * Game GUI Options.
+ */
 export interface GameGUIOptions {
 game_title: GameTitle
 menu_options: MenuOptions
@@ -172,6 +186,9 @@ categories: Categories
 settings_file?: SettingsFile
 [k: string]: unknown
 }
+/**
+ * Menu Option used by the GUI.
+ */
 export interface MenuOption {
 label: Label1
 args: Args1

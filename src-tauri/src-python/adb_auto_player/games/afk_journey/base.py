@@ -27,6 +27,7 @@ from adb_auto_player.util import SummaryGenerator
 
 from .battle_state import BattleState, Mode
 from .gui_category import AFKJCategory
+from .mixins.hero_scanner import HeroScannerMixin
 from .navigation import Navigation
 from .settings import Settings
 
@@ -39,7 +40,7 @@ from .settings import Settings
         categories=list(AFKJCategory),
     ),
 )
-class AFKJourneyBase(Navigation, Game):
+class AFKJourneyBase(Navigation, HeroScannerMixin, Game):
     """AFK Journey Base Class."""
 
     def __init__(self) -> None:
@@ -55,8 +56,14 @@ class AFKJourneyBase(Navigation, Game):
 
     # Timeout constants (in seconds)
     BATTLE_TIMEOUT: int = 240
-    MIN_TIMEOUT: int = 10
-    FAST_TIMEOUT: int = 3
+
+    @property
+    def min_timeout(self) -> float:
+        return self.template_timeout
+
+    @property
+    def fast_timeout(self) -> float:
+        return max(3.0, self.template_timeout / 3.0)
 
     # Error strings
     LANG_ERROR: str = "Is the game language set to English?"
@@ -97,7 +104,7 @@ class AFKJourneyBase(Navigation, Game):
         try:
             _ = self.wait_for_template(
                 "duras_trials/socketed_charms_overview",
-                timeout=self.FAST_TIMEOUT,
+                timeout=self.fast_timeout,
             )
             self._tap_till_template_disappears("duras_trials/battle")
         except GameTimeoutError:
@@ -164,15 +171,15 @@ class AFKJourneyBase(Navigation, Game):
         retry_button = self._find_retry_button(timeout=5.0)
         if retry_button:
             self.tap(retry_button)
-            sleep(2)
+            self.sleep_navigation()
             return
 
         if self._find_battle_screen(timeout=2.0):
             return
 
         self.press_back_button()
-        sleep(2)
-        self._find_battle_screen(timeout=10.0, raise_on_timeout=True)
+        self.sleep_navigation()
+        self._find_battle_screen(timeout=self.template_timeout, raise_on_timeout=True)
 
     def _find_retry_button(self, timeout: float) -> TemplateMatchResult | None:
         """Locate the retry button if present."""
@@ -313,19 +320,19 @@ class AFKJourneyBase(Navigation, Game):
                 formation_next = self.wait_for_template(
                     "battle/formation_next.png",
                     crop_regions=CropRegions(left=0.8, top=0.5, bottom=0.4),
-                    timeout=self.MIN_TIMEOUT,
+                    timeout=self.min_timeout,
                     timeout_message=(
                         f"Formation #{self.battle_state.formation_num} not found"
                     ),
                 )
                 start_image = self.get_screenshot()
                 self.tap(formation_next)
-                sleep(15.0 / 30.0)
+                self.sleep_action()  # Internal animation timing, keep short
                 self.wait_for_roi_change(
                     start_image=start_image,
                     crop_regions=CropRegions(left=0.2, right=0.2, top=0.15, bottom=0.8),
                     threshold=ConfidenceValue("80%"),
-                    timeout=self.MIN_TIMEOUT,
+                    timeout=self.min_timeout,
                     timeout_message=(
                         f"Formation #{self.battle_state.formation_num} not found"
                     ),
@@ -363,7 +370,7 @@ class AFKJourneyBase(Navigation, Game):
             template="battle/records.png",
             crop_regions=CropRegions(right=0.5, top=0.8),
         )
-        sleep(0.5)
+        self.sleep_action()
         try:
             self._tap_till_template_disappears(
                 template="battle/records.png",
@@ -374,14 +381,14 @@ class AFKJourneyBase(Navigation, Game):
             self.wait_for_template(
                 "battle/copy.png",
                 crop_regions=CropRegions(left=0.3, right=0.1, top=0.7, bottom=0.1),
-                timeout=self.MIN_TIMEOUT,
+                timeout=self.min_timeout,
                 timeout_message="No more formations available for this battle",
             )
         except (GameTimeoutError, GameActionFailedError) as e:
             raise AutoPlayerWarningError(e)
 
         # UI is not interactable for some time fuck Lilith
-        sleep(2)
+        self.sleep_navigation()
 
     def _skip_formation(self, skip_manual: bool, only_manual: bool) -> bool:
         """Check if current formation should be skipped.
@@ -415,10 +422,12 @@ class AFKJourneyBase(Navigation, Game):
         Returns:
             str | None: Name of excluded hero
         """
-        excluded_heroes_dict: dict[str, str] = {
-            f"heroes/{re.sub(r'[\s&]', '', name.value.lower())}.png": name.value
-            for name in self.settings.general.excluded_heroes
-        }
+        excluded_heroes_dict: dict[str, str] = {}
+        for name in self.settings.general.excluded_heroes:
+            # Python 3.11 doesn't allow backslashes in f-strings,
+            # so handle the name processing first
+            clean_name = re.sub(r"[\s&]", "", name.value.lower())
+            excluded_heroes_dict[f"heroes/{clean_name}.png"] = name.value
 
         if not excluded_heroes_dict:
             return None
@@ -466,14 +475,18 @@ class AFKJourneyBase(Navigation, Game):
         )
 
         try:
+            # Tap immediately to avoid skipping due to visual glitches
+            self.tap(Point(x=850, y=1780))
             self._tap_coordinates_till_template_disappears(
                 coordinates=Point(x=850, y=1780),
                 template=result.template,
+                crop_regions=CropRegions(top=0.5),
+                delay=2.0,
             )
         except GameActionFailedError:
             logging.warning("Failed to start Battle, are no Heroes selected?")
             return False
-        sleep(1)
+        self.sleep_action()
 
         # Need to double-check the order of prompts here
         if self.find_any_template(["battle/spend.png", "battle/gold.png"]):
@@ -482,8 +495,7 @@ class AFKJourneyBase(Navigation, Game):
                 self.battle_state.max_attempts_reached = True
                 self.press_back_button()
                 return False
-            else:
-                self._click_confirm_on_popup()
+            self._click_confirm_on_popup()
 
         # Just handle however many popups show up
         # Needs a counter to prevent infinite loop on freeze though
@@ -510,7 +522,7 @@ class AFKJourneyBase(Navigation, Game):
         )
         if result:
             self.tap(result)
-            sleep(1)
+            self.sleep_action()
             return True
         return False
 
@@ -626,6 +638,7 @@ class AFKJourneyBase(Navigation, Game):
                 prev_crop = curr_crop
                 sleep(1)
 
+        # Fallback: non-timer mode uses simple wait_for_any_template
         return self.wait_for_any_template(
             templates=self._get_battle_over_templates(),
             timeout=self.BATTLE_TIMEOUT,
@@ -659,7 +672,7 @@ class AFKJourneyBase(Navigation, Game):
                         Point(x=550, y=1800),
                         log_message=f"Lost Battle #{attempt}, retrying",
                     )
-                    sleep(3)
+                    self.sleep_navigation()
                     self._re_enter_battle_for_duras()
                     result = False
                 else:
@@ -674,7 +687,7 @@ class AFKJourneyBase(Navigation, Game):
                     "Network Error or Battle data differs between client and server"
                 )
                 self.tap(match)
-                sleep(3)
+                self.sleep_navigation()
 
             case (
                 "next.png"
@@ -707,7 +720,7 @@ class AFKJourneyBase(Navigation, Game):
             if result is None:
                 break
             self.tap(result)
-            sleep(1)
+            self.sleep_action()
 
     def _is_manual_formation(self) -> bool:
         """Check if current formation is manual.

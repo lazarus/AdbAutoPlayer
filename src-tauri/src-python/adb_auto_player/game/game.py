@@ -4,9 +4,11 @@ import logging
 from abc import ABC, abstractmethod
 from functools import cached_property
 from pathlib import Path
+from time import sleep
 
 from adb_auto_player.exceptions import AutoPlayerUnrecoverableError
 from adb_auto_player.file_loader import SettingsLoader
+from adb_auto_player.models.pydantic.app_settings import AppSettings
 from adb_auto_player.registries import GAME_REGISTRY
 from pydantic import BaseModel
 
@@ -21,6 +23,30 @@ class Game(TaskRunnerMixin, ABC):
     def settings(self) -> BaseModel:
         """Required property to return the game settings."""
         ...
+
+    @property
+    def app_settings(self) -> AppSettings:
+        """Get Global App Settings."""
+        try:
+            # App.toml is located in the root config dir, not the profile dir
+            app_config_dir = SettingsLoader.get_app_config_dir().parent
+            app_settings_path = app_config_dir / "App.toml"
+            return AppSettings.from_toml(app_settings_path)
+        except Exception:
+            return AppSettings()
+
+    def sleep_action(self) -> None:
+        """Sleep for the duration configured for standard actions."""
+        sleep(self.app_settings.advanced.action_delay)
+
+    def sleep_navigation(self) -> None:
+        """Sleep for the duration configured for navigation transitions."""
+        sleep(self.app_settings.advanced.navigation_delay)
+
+    @property
+    def template_timeout(self) -> float:
+        """Get the global template timeout from settings."""
+        return self.app_settings.advanced.template_timeout
 
     def _get_game_module(self) -> str:
         parts = self.__class__.__module__.split(".")

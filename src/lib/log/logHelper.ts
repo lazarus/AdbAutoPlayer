@@ -1,9 +1,30 @@
 import { Instant } from "@js-joda/core";
 
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export function formatMessage(message: string): string {
   const urlRegex = /(https?:\/\/[^\s'"]+)/g;
-  return message
+  // Refined regex for Windows paths and Unix paths
+  // 1. Windows drive: \b[a-zA-Z]:\\...
+  // 2. %USERPROFILE%: %USERPROFILE%\\...
+  // 3. Unix home: ~/...
+  const pathRegex =
+    /(\b[a-zA-Z]:\\[\\\w\s\.\-!@#$%^&()]+|%USERPROFILE%\\[\\\w\s\.\-!@#$%^&()]+|~[\/\w\s\.\-!@#$%^&()]+)/g;
+
+  return escapeHtml(message)
     .replace(urlRegex, '<a class="anchor" href="$1" target="_blank">$1</a>')
+    .replace(pathRegex, (match) => {
+      // If it looks like it's inside an HTML tag (already replaced by urlRegex), skip it
+      if (match.includes("://")) return match;
+      return `<span class="path-link cursor-pointer underline text-accent hover:text-accent-hi" data-path="${match}">${match}</span>`;
+    })
     .replace(/\r?\n/g, "<br>");
 }
 
@@ -17,11 +38,18 @@ export function getLogClass(message: string): string {
 }
 
 function sanitizeMessage(message: string): string {
-  // Regex to match Windows user-profile path:
-  // C:\Users\anything_until_next_backslash\
-  const userPathRegex = /C:\\Users\\[^\\]+\\/gi;
+  // Regex to match Windows user-profile path: C:\Users\username\
+  const windowsUserPathRegex = /C:\\Users\\[^\\]+\\/gi;
+  // Regex to match macOS user-profile path: /Users/username/
+  const macosUserPathRegex = /\/Users\/[^/]+\//gi;
+  // Regex to match Linux user-profile path: /home/username/
+  const linuxUserPathRegex = /\/home\/[^/]+\//gi;
 
-  return message.replace(userPathRegex, "C:\\Users\\$env:USERNAME\\");
+  let sanitized = message.replace(windowsUserPathRegex, "%USERPROFILE%\\");
+  sanitized = sanitized.replace(macosUserPathRegex, "~/");
+  sanitized = sanitized.replace(linuxUserPathRegex, "~/");
+
+  return sanitized;
 }
 
 export function logMessageToTextDisplayCardItem(

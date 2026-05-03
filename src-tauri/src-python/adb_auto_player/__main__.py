@@ -87,14 +87,19 @@ def tauri_profile_aware_command(func):
 
         if not _base_resource_dir:
             _base_resource_dir = Manager.path(app_handle).resource_dir()
-            # Tauri Dev
-            if _base_resource_dir.parts[-2:] == ("target", "debug"):
-                _base_resource_dir = (
-                    _base_resource_dir.parent.parent
-                    / "src-tauri"
-                    / "src-python"
-                    / "adb_auto_player"
-                )
+            # Tauri Dev Mode Path Correction
+            # In Dev mode, resource_dir points to the target/debug directory.
+            # We need to find the project root and navigate to the python source.
+            if "target" in _base_resource_dir.parts:
+                # Find index of 'target' and go one level up to get to 'src-tauri'
+                try:
+                    target_idx = _base_resource_dir.parts.index("target")
+                    project_root = Path(*_base_resource_dir.parts[:target_idx])
+                    _base_resource_dir = (
+                        project_root / "src-tauri" / "src-python" / "adb_auto_player"
+                    )
+                except (ValueError, IndexError):
+                    pass
 
         SettingsLoader.set_app_config_dir(
             _base_app_config_dir / f"{body.profile_index}"
@@ -122,7 +127,11 @@ class TauriQueueHandler(logging.Handler):
             html_class=getattr(record, "preset", None),
             profile_index=self.profile_index,
         )
-        Emitter.emit(self.app_handle, "log-message", log_message)
+        try:
+            Emitter.emit(self.app_handle, "log-message", log_message)
+        except Exception:
+            # Silence IPC errors during rapid window events
+            pass
 
 
 def _setup_logging() -> None:
@@ -148,7 +157,10 @@ def _setup_logging() -> None:
             )
             app_handle = TauriContext.get_app_handle()
             if app_handle:
-                Emitter.emit(app_handle, "log-message", log_message)
+                try:
+                    Emitter.emit(app_handle, "log-message", log_message)
+                except Exception:
+                    pass
             else:
                 print(f"[ERROR] No AppHandle in current context: {record.getMessage()}")
 

@@ -186,7 +186,7 @@ class TestCropFunction:
         """Test that single pixel value exceeding dimension raises error."""
         original = TestImageGeneration.create_test_image(50, 50)
 
-        with pytest.raises(ValueError, match="Left crop.*exceeds image dimension"):
+        with pytest.raises(ValueError, match=r"Left crop.*exceeds image dimension"):
             crop_regions = CropRegions(left=60)  # 60px from 50px width
             Cropping.crop(original, crop_regions)
 
