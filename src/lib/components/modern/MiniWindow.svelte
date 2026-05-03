@@ -21,6 +21,12 @@
   const gameTitle = $derived(profile?.game_menu?.game_title);
   const activeTask = $derived(profile?.active_task);
   const gameIcon = $derived(getGameIcon(gameTitle));
+  const activeOption = $derived(
+    profile?.game_menu?.menu_options?.find((o) => o.label === activeTask),
+  );
+  const taskName = $derived(
+    activeOption?.custom_label ?? activeOption?.label ?? activeTask,
+  );
 
   // Same stat tracking as Hero
   let startTime = $state<number | null>(null);
@@ -119,7 +125,7 @@
 
     <div class="info" data-tauri-drag-region>
       {#if activeTask}
-        <div class="task-name" data-tauri-drag-region>{activeTask}</div>
+        <div class="task-name" data-tauri-drag-region>{taskName}</div>
         <div class="stats" data-tauri-drag-region>
           <span class="stat" title={$t("Elapsed")}>
             <svg
