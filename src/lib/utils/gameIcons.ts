@@ -5,10 +5,15 @@
 interface GameIcon {
   initials: string;
   color: string;
+  image?: string;
 }
 
 const gameMap: Record<string, GameIcon> = {
-  "AFK Journey": { initials: "AJ", color: "#a78bfa" },
+  "AFK Journey": {
+    initials: "AJ",
+    color: "#a78bfa",
+    image: "/AFKJourney/icon.ico",
+  },
 };
 
 export function getGameIcon(gameTitle: string | undefined | null): GameIcon {

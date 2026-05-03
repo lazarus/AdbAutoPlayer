@@ -111,12 +111,15 @@
   <div class="hero-idle" class:compact={$uiState.taskViewVariant === "list"}>
     <div
       class="icon-idle"
-      class:icon-idle-game={!!gameTitle}
-      style={gameTitle
+      class:icon-idle-game={!!gameTitle && !gameIcon.image}
+      class:icon-idle-image={!!gameIcon.image}
+      style={gameTitle && !gameIcon.image
         ? `background: linear-gradient(135deg, color-mix(in oklab, ${gameIcon.color} 70%, white), ${gameIcon.color}); color: white;`
         : ""}
     >
-      {#if gameTitle}
+      {#if gameIcon.image}
+        <img src={gameIcon.image} alt={gameTitle ?? ""} class="game-img" />
+      {:else if gameTitle}
         <span class="idle-initials">{gameIcon.initials}</span>
       {:else}
         <svg
@@ -154,9 +157,16 @@
     <div class="inner">
       <div
         class="game-icon-badge"
-        style="background: linear-gradient(135deg, color-mix(in oklab, {gameIcon.color} 80%, white), {gameIcon.color}); box-shadow: 0 6px 18px color-mix(in oklab, {gameIcon.color} 35%, transparent);"
+        class:game-icon-image={!!gameIcon.image}
+        style={gameIcon.image
+          ? `box-shadow: 0 6px 18px color-mix(in oklab, ${gameIcon.color} 35%, transparent);`
+          : `background: linear-gradient(135deg, color-mix(in oklab, ${gameIcon.color} 80%, white), ${gameIcon.color}); box-shadow: 0 6px 18px color-mix(in oklab, ${gameIcon.color} 35%, transparent);`}
       >
-        {gameIcon.initials}
+        {#if gameIcon.image}
+          <img src={gameIcon.image} alt={gameTitle ?? ""} class="game-img" />
+        {:else}
+          {gameIcon.initials}
+        {/if}
         <span class="ring"></span>
       </div>
 
@@ -405,6 +415,29 @@
     letter-spacing: -0.02em;
     position: relative;
     flex: 0 0 52px;
+    overflow: hidden;
+  }
+
+  .game-icon-badge.game-icon-image {
+    background: var(--bg-2);
+  }
+
+  .game-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .icon-idle.icon-idle-image {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    overflow: hidden;
+    padding: 0;
+  }
+
+  .icon-idle .game-img {
+    border-radius: inherit;
   }
 
   .ring {
