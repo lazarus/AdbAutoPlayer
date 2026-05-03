@@ -45,7 +45,13 @@
   const dotColors = {
     running: "var(--ok)",
     idle: "var(--warn)",
-    offline: "var(--text-4)",
+    offline: "transparent",
+  };
+
+  const dotBorders = {
+    running: "none",
+    idle: "none",
+    offline: "2px solid var(--text-3)",
   };
 </script>
 
@@ -93,7 +99,11 @@
                 d="M11 18h2"
               /></svg
             >
-            <span class="status-dot" style="background: {dotColors[status]}"
+            <span
+              class="status-dot"
+              style="background: {dotColors[status]}; border: {dotBorders[
+                status
+              ]}"
             ></span>
           </div>
           <div class="info">
@@ -151,10 +161,27 @@
             d="M11 18h2"
           /></svg
         >
-        <span class="status-dot-mini" style="background: {dotColors[status]}"
+        <span
+          class="status-dot-mini"
+          style="background: {dotColors[status]}; border: {dotBorders[status]}"
         ></span>
       </button>
     {/each}
+    <button
+      class="rail-btn rail-add-btn"
+      onclick={onAddProfile}
+      title={$t("Add profile")}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        width="14"
+        height="14"><path d="M12 5v14M5 12h14" /></svg
+      >
+    </button>
   </div>
 {/if}
 
@@ -332,12 +359,31 @@
     background: var(--bg-2);
     color: var(--text-3);
     border: 1px solid var(--line);
+    transition:
+      background var(--dur-1),
+      color var(--dur-1),
+      border-color var(--dur-1);
+  }
+
+  .rail-btn:not(.selected):hover {
+    background: var(--bg-hover);
+    color: var(--text-2);
   }
 
   .rail-btn.selected {
     background: var(--accent-ghost);
     color: var(--accent);
     border: 1px solid color-mix(in oklab, var(--accent) 40%, transparent);
+  }
+
+  .rail-add-btn {
+    margin-top: 4px;
+    border-style: dashed;
+  }
+
+  .rail-add-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
   }
 
   .status-dot-mini {

@@ -119,7 +119,7 @@
         height="16"
         ><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg
       >
-      <p>{$t("These settings are applied locally to your current session.")}</p>
+      <p>{$t("Theme and accent preferences are saved automatically.")}</p>
     </div>
   </div>
 </div>
@@ -209,6 +209,11 @@
     font-weight: 600;
     color: var(--text-3);
     transition: all var(--dur-1);
+  }
+
+  .mode-btn:not(.active):hover {
+    background: var(--bg-hover);
+    color: var(--text-2);
   }
 
   .mode-btn.active {

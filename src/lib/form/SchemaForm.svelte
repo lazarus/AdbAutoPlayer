@@ -20,6 +20,7 @@
   } = $props();
 
   let isSaving = $state(false);
+  let saveSuccess = $state(false);
   let openSections = $state(new Set<string>());
 
   interface Section {
@@ -91,6 +92,8 @@
     void (async () => {
       await onFormSubmit();
       isSaving = false;
+      saveSuccess = true;
+      setTimeout(() => (saveSuccess = false), 2000);
     })();
   }
 
@@ -282,13 +285,28 @@
       <button
         type="button"
         class="save-btn"
+        class:success={saveSuccess}
         disabled={isSaving}
         onclick={handleSave}
       >
         {#if isSaving}
           <span class="spinner"></span>
+          {$t("Save Settings")}
+        {:else if saveSuccess}
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            width="14"
+            height="14"><path d="M20 6 9 17l-5-5" /></svg
+          >
+          {$t("Saved")}
+        {:else}
+          {$t("Save Settings")}
         {/if}
-        {$t("Save Settings")}
       </button>
     </div>
   </form>
@@ -339,6 +357,11 @@
     background: var(--bg-2);
     border-bottom: 1px solid transparent;
     transition: all var(--dur-1);
+    cursor: pointer;
+  }
+
+  .section-header:hover {
+    background: var(--bg-hover);
   }
 
   .form-section.open .section-header {
@@ -428,6 +451,11 @@
     cursor: not-allowed;
   }
 
+  .save-btn.success {
+    background: var(--ok);
+    box-shadow: 0 4px 12px color-mix(in oklab, var(--ok) 25%, transparent);
+  }
+
   .select option {
     background-color: var(--bg-1);
     color: var(--text-1);
@@ -467,7 +495,7 @@
     width: 14px;
     left: 2px;
     bottom: 2px;
-    background-color: var(--text-4);
+    background-color: var(--text-2);
     transition: 0.3s;
     border-radius: 50%;
   }

@@ -86,7 +86,6 @@
         placeholder={$t("Search tasks...")}
         class="search-input"
       />
-      <kbd class="kbd">⌘K</kbd>
     </div>
 
     <div class="variant-toggle">
@@ -129,12 +128,17 @@
             </div>
             <div class="grid">
               {#each categorizedButtons[cat] as b}
+                {@const isDisabled =
+                  disableActions && !b.isProcessRunning && !b.alwaysEnabled}
                 <button
                   class="task-card"
                   class:active={b.isProcessRunning}
-                  disabled={disableActions &&
-                    !b.isProcessRunning &&
-                    !b.alwaysEnabled}
+                  disabled={isDisabled}
+                  title={isDisabled
+                    ? $t("Stop the running task before starting another")
+                    : b.option.tooltip
+                      ? $t(b.option.tooltip)
+                      : undefined}
                   onclick={b.callback}
                 >
                   <div class="card-top">
@@ -243,12 +247,17 @@
               <div class="acc-content">
                 <div class="grid">
                   {#each categorizedButtons[cat] as b}
+                    {@const isDisabled =
+                      disableActions && !b.isProcessRunning && !b.alwaysEnabled}
                     <button
                       class="task-card"
                       class:active={b.isProcessRunning}
-                      disabled={disableActions &&
-                        !b.isProcessRunning &&
-                        !b.alwaysEnabled}
+                      disabled={isDisabled}
+                      title={isDisabled
+                        ? $t("Stop the running task before starting another")
+                        : b.option.tooltip
+                          ? $t(b.option.tooltip)
+                          : undefined}
                       onclick={b.callback}
                     >
                       <div class="card-top">
@@ -266,6 +275,9 @@
                           </div>
                         {/if}
                       </div>
+                      {#if b.option.tooltip}
+                        <div class="card-hint">{$t(b.option.tooltip)}</div>
+                      {/if}
                     </button>
                   {/each}
                 </div>
@@ -319,16 +331,6 @@
     font-family: inherit;
   }
 
-  .kbd {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text-3);
-    padding: 2px 6px;
-    border: 1px solid var(--line);
-    border-radius: 4px;
-    background: var(--bg-2);
-  }
-
   .variant-toggle {
     display: flex;
     padding: 2px;
@@ -348,6 +350,11 @@
     background: transparent;
     color: var(--text-3);
     transition: all var(--dur-1);
+  }
+
+  .v-btn:not(.active):hover {
+    background: var(--bg-2);
+    color: var(--text-2);
   }
 
   .v-btn.active {
@@ -599,6 +606,11 @@
     gap: 10px;
     padding: 12px 16px;
     text-align: left;
+    transition: background var(--dur-1);
+  }
+
+  .accordion-trigger:hover {
+    background: var(--bg-hover);
   }
 
   .chevron-toggle {

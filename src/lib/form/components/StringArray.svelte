@@ -2,11 +2,18 @@
   import { showErrorToast } from "$lib/toast/toast-error";
   import type { StringValueArrayProps } from "$lib/form/types";
   import { t } from "$lib/i18n/i18n";
+  import { tick } from "svelte";
 
   let { value = $bindable(), minItems }: StringValueArrayProps = $props();
 
-  function addItem() {
+  let container: HTMLElement;
+
+  async function addItem() {
     value = [...value, ""];
+    await tick();
+    const inputs =
+      container?.querySelectorAll<HTMLInputElement>('input[type="text"]');
+    if (inputs?.length) inputs[inputs.length - 1].focus();
   }
 
   function removeItem(idx: number) {
@@ -18,7 +25,7 @@
   }
 </script>
 
-<div class="array-container">
+<div class="array-container" bind:this={container}>
   {#each value as item, idx}
     <div class="array-item">
       <input type="text" class="form-input" bind:value={value[idx]} />
