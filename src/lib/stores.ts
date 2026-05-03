@@ -14,6 +14,8 @@ const defaultUiState = {
   logOpen: true,
   theme: "dark" as "dark" | "light",
   accentHue: 272,
+  accentChroma: 0.18,
+  accentLightness: 0.67,
   customizerOpen: false,
   taskViewVariant: "cards" as "cards" | "list",
 };
@@ -53,6 +55,8 @@ if (typeof window !== "undefined") {
         logOpen: state.logOpen,
         theme: state.theme,
         accentHue: state.accentHue,
+        accentChroma: state.accentChroma,
+        accentLightness: state.accentLightness,
         taskViewVariant: state.taskViewVariant,
       };
       localStorage.setItem("uiState", JSON.stringify(stateToSave));

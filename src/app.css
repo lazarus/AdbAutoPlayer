@@ -4,11 +4,22 @@
 /* ---------- Design tokens from reference ---------- */
 :root {
   --accent-h: 272;
-  --accent: oklch(0.67 0.18 var(--accent-h));
-  --accent-hi: oklch(0.78 0.14 var(--accent-h));
-  --accent-lo: oklch(0.52 0.18 var(--accent-h));
-  --accent-ghost: oklch(0.67 0.18 var(--accent-h) / 0.14);
-  --accent-ring: oklch(0.67 0.18 var(--accent-h) / 0.55);
+  --accent-c: 0.18;
+  --accent-l: 0.67;
+  --accent: oklch(var(--accent-l) var(--accent-c) var(--accent-h));
+  --accent-hi: oklch(
+    calc(var(--accent-l) + 0.11) calc(max(var(--accent-c) - 0.04, 0))
+      var(--accent-h)
+  );
+  --accent-lo: oklch(
+    calc(var(--accent-l) - 0.15) var(--accent-c) var(--accent-h)
+  );
+  --accent-ghost: oklch(
+    var(--accent-l) var(--accent-c) var(--accent-h) / 0.14
+  );
+  --accent-ring: oklch(
+    var(--accent-l) var(--accent-c) var(--accent-h) / 0.55
+  );
 
   --ok: oklch(0.74 0.15 155);
   --warn: oklch(0.82 0.16 85);

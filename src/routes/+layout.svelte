@@ -61,10 +61,10 @@
 
   $effect(() => {
     document.documentElement.className = $uiState.theme;
-    document.documentElement.style.setProperty(
-      "--accent-h",
-      $uiState.accentHue.toString(),
-    );
+    const root = document.documentElement;
+    root.style.setProperty("--accent-h", $uiState.accentHue.toString());
+    root.style.setProperty("--accent-c", $uiState.accentChroma.toString());
+    root.style.setProperty("--accent-l", $uiState.accentLightness.toString());
   });
 
   async function init() {

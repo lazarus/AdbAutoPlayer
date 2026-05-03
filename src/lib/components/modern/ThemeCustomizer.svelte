@@ -5,15 +5,51 @@
 
   let { onClose }: { onClose: () => void } = $props();
 
-  const presets = [
-    { name: "Purple", h: 272 },
-    { name: "Blue", h: 220 },
-    { name: "Cyan", h: 185 },
-    { name: "Green", h: 145 },
-    { name: "Amber", h: 45 },
-    { name: "Red", h: 25 },
-    { name: "Rose", h: 350 },
+  // Presets are full {hue, chroma, lightness} triplets so they can express
+  // muted/saturated/dark/bright variants, not just hue.
+  interface Preset {
+    name: string;
+    h: number;
+    c: number;
+    l: number;
+  }
+
+  const presets: Preset[] = [
+    { name: "Purple", h: 272, c: 0.18, l: 0.67 },
+    { name: "Blue", h: 220, c: 0.18, l: 0.67 },
+    { name: "Cyan", h: 185, c: 0.16, l: 0.72 },
+    { name: "Green", h: 145, c: 0.18, l: 0.7 },
+    { name: "Amber", h: 70, c: 0.18, l: 0.78 },
+    { name: "Red", h: 25, c: 0.2, l: 0.65 },
+    { name: "Rose", h: 350, c: 0.16, l: 0.7 },
+    { name: "Mono", h: 272, c: 0, l: 0.7 },
   ];
+
+  const DEFAULTS = { h: 272, c: 0.18, l: 0.67 };
+
+  function applyPreset(p: Preset) {
+    $uiState.accentHue = p.h;
+    $uiState.accentChroma = p.c;
+    $uiState.accentLightness = p.l;
+  }
+
+  function resetToDefaults() {
+    $uiState.accentHue = DEFAULTS.h;
+    $uiState.accentChroma = DEFAULTS.c;
+    $uiState.accentLightness = DEFAULTS.l;
+  }
+
+  const matchesPreset = $derived(
+    (p: Preset) =>
+      Math.abs(p.h - $uiState.accentHue) < 0.5 &&
+      Math.abs(p.c - $uiState.accentChroma) < 0.005 &&
+      Math.abs(p.l - $uiState.accentLightness) < 0.005,
+  );
+
+  // Live oklch preview for the swatch
+  const previewColor = $derived(
+    `oklch(${$uiState.accentLightness} ${$uiState.accentChroma} ${$uiState.accentHue})`,
+  );
 </script>
 
 <!-- Backdrop -->
@@ -85,25 +121,86 @@
 
     <!-- Accent Color -->
     <section class="section">
-      <div class="section-label">
-        {$t("Accent Hue")} ({$uiState.accentHue}°)
+      <div class="section-head">
+        <div class="section-label">{$t("Accent Color")}</div>
+        <button class="reset-btn" onclick={resetToDefaults}>
+          {$t("Reset")}
+        </button>
       </div>
-      <input
-        type="range"
-        min="0"
-        max="360"
-        bind:value={$uiState.accentHue}
-        class="hue-slider"
-      />
+
+      <div class="swatch-row">
+        <div class="swatch" style="background: {previewColor}"></div>
+        <div class="swatch-meta">
+          <div class="swatch-label">{$t("Preview")}</div>
+          <code class="swatch-code">{previewColor}</code>
+        </div>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-row">
+          <label class="slider-label" for="hue-slider">
+            {$t("Hue")}
+            <span class="slider-val">{Math.round($uiState.accentHue)}°</span>
+          </label>
+          <input
+            id="hue-slider"
+            type="range"
+            min="0"
+            max="360"
+            step="1"
+            bind:value={$uiState.accentHue}
+            class="slider hue-slider"
+          />
+        </div>
+
+        <div class="slider-row">
+          <label class="slider-label" for="sat-slider">
+            {$t("Saturation")}
+            <span class="slider-val"
+              >{Math.round(($uiState.accentChroma / 0.3) * 100)}%</span
+            >
+          </label>
+          <input
+            id="sat-slider"
+            type="range"
+            min="0"
+            max="0.3"
+            step="0.005"
+            bind:value={$uiState.accentChroma}
+            class="slider"
+            style="background: linear-gradient(to right, oklch({$uiState.accentLightness} 0 {$uiState.accentHue}), oklch({$uiState.accentLightness} 0.3 {$uiState.accentHue}))"
+          />
+        </div>
+
+        <div class="slider-row">
+          <label class="slider-label" for="light-slider">
+            {$t("Lightness")}
+            <span class="slider-val"
+              >{Math.round($uiState.accentLightness * 100)}%</span
+            >
+          </label>
+          <input
+            id="light-slider"
+            type="range"
+            min="0.2"
+            max="0.95"
+            step="0.005"
+            bind:value={$uiState.accentLightness}
+            class="slider"
+            style="background: linear-gradient(to right, oklch(0.2 {$uiState.accentChroma} {$uiState.accentHue}), oklch(0.95 {$uiState.accentChroma} {$uiState.accentHue}))"
+          />
+        </div>
+      </div>
 
       <div class="presets-grid">
         {#each presets as p}
           <button
             class="preset-btn"
-            style="--p-color: oklch(0.67 0.18 {p.h})"
-            class:active={$uiState.accentHue === p.h}
-            onclick={() => ($uiState.accentHue = p.h)}
+            style="--p-color: oklch({p.l} {p.c} {p.h})"
+            class:active={matchesPreset(p)}
+            onclick={() => applyPreset(p)}
             title={p.name}
+            aria-label={p.name}
           ></button>
         {/each}
       </div>
@@ -138,7 +235,7 @@
     top: 44px;
     right: 0;
     bottom: 0;
-    width: 320px;
+    width: 340px;
     background: var(--bg-1);
     border-left: 1px solid var(--line);
     box-shadow: -8px 0 32px rgba(0, 0, 0, 0.2);
@@ -173,10 +270,10 @@
   .panel-body {
     flex: 1;
     overflow-y: auto;
-    padding: 24px 20px;
+    padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: 32px;
+    gap: 28px;
   }
 
   .section-label {
@@ -186,6 +283,30 @@
     letter-spacing: 0.1em;
     color: var(--text-3);
     margin-bottom: 12px;
+  }
+
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .section-head .section-label {
+    margin-bottom: 0;
+  }
+
+  .reset-btn {
+    font-size: 11px;
+    color: var(--text-3);
+    padding: 2px 8px;
+    border-radius: 4px;
+    transition: all var(--dur-1);
+  }
+
+  .reset-btn:hover {
+    color: var(--text-1);
+    background: var(--bg-hover);
   }
 
   .mode-toggle {
@@ -222,25 +343,98 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
-  .hue-slider {
-    width: 100%;
-    margin: 8px 0 16px;
-    appearance: none;
-    height: 6px;
-    border-radius: 3px;
-    background: linear-gradient(
-      to right,
-      oklch(0.67 0.18 0),
-      oklch(0.67 0.18 60),
-      oklch(0.67 0.18 120),
-      oklch(0.67 0.18 180),
-      oklch(0.67 0.18 240),
-      oklch(0.67 0.18 300),
-      oklch(0.67 0.18 360)
-    );
+  .swatch-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 10px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
   }
 
-  .hue-slider::-webkit-slider-thumb {
+  .swatch {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    flex: 0 0 44px;
+    box-shadow: 0 4px 12px color-mix(in oklab, var(--accent) 25%, transparent);
+  }
+
+  .swatch-meta {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .swatch-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-4);
+    margin-bottom: 2px;
+  }
+
+  .swatch-code {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--text-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+  }
+
+  .slider-group {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .slider-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-2);
+    margin-bottom: 6px;
+  }
+
+  .slider-val {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-3);
+    font-weight: 500;
+  }
+
+  .slider {
+    width: 100%;
+    appearance: none;
+    height: 8px;
+    border-radius: 4px;
+    background: var(--bg-3);
+    border: 1px solid var(--line);
+    outline: none;
+  }
+
+  .hue-slider {
+    background: linear-gradient(
+      to right,
+      oklch(0.7 0.18 0),
+      oklch(0.7 0.18 60),
+      oklch(0.7 0.18 120),
+      oklch(0.7 0.18 180),
+      oklch(0.7 0.18 240),
+      oklch(0.7 0.18 300),
+      oklch(0.7 0.18 360)
+    );
+    border: none;
+  }
+
+  .slider::-webkit-slider-thumb {
     appearance: none;
     width: 18px;
     height: 18px;
@@ -248,12 +442,12 @@
     background: white;
     border: 3px solid var(--accent);
     cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   }
 
   .presets-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(32px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
     gap: 10px;
   }
 
