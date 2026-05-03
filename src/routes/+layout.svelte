@@ -34,6 +34,7 @@
   import ThemeCustomizer from "$lib/components/modern/ThemeCustomizer.svelte";
   import MiniWindow from "$lib/components/modern/MiniWindow.svelte";
   import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
+  import { initTaskRuntime } from "$lib/taskRuntime";
   import SchemaForm from "$lib/form/SchemaForm.svelte";
   import type {
     SettingsProps,
@@ -84,6 +85,13 @@
 
   onMount(() => {
     return setupExternalLinkHandler();
+  });
+
+  // Centralized log + stats listeners (singleton; survives layout changes)
+  onMount(() => {
+    initTaskRuntime().catch((e) =>
+      console.error("Failed to init task runtime:", e),
+    );
   });
 
   onMount(() => {

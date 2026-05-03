@@ -1,10 +1,7 @@
 <script lang="ts">
   import { t } from "$lib/i18n/i18n";
   import { activeProfile, profileStates, uiState } from "$lib/stores";
-  import { get } from "svelte/store";
-  import { onMount } from "svelte";
-  import { listen } from "@tauri-apps/api/event";
-  import { EventNames } from "$lib/log/eventNames";
+  import { taskStats, getElapsedString } from "$lib/taskRuntime";
   import { getGameIcon } from "$lib/utils/gameIcons";
   import LogPanel from "$lib/components/modern/LogPanel.svelte";
 
@@ -28,82 +25,33 @@
     activeOption?.custom_label ?? activeOption?.label ?? activeTask,
   );
 
-  // Same stat tracking as Hero
-  let startTime = $state<number | null>(null);
-  let elapsed = $state("00:00");
-  let elapsedSeconds = $state(0);
-  let timer: ReturnType<typeof setInterval>;
-  let issueCount = $state(0);
-  let restartCount = $state(0);
-  let clearedCount = $state(0);
-  let failureCount = $state(0);
-
-  $effect(() => {
-    if (activeTask) {
-      if (!startTime) {
-        startTime = Date.now();
-        issueCount = 0;
-        restartCount = 0;
-        clearedCount = 0;
-        failureCount = 0;
-      }
-    } else {
-      startTime = null;
-      elapsed = "00:00";
-      elapsedSeconds = 0;
-    }
-  });
+  const stats = $derived(
+    $taskStats[$activeProfile] ?? {
+      startTime: null,
+      elapsedSeconds: 0,
+      issueCount: 0,
+      restartCount: 0,
+      clearedCount: 0,
+      failureCount: 0,
+    },
+  );
+  const elapsed = $derived(getElapsedString(stats.elapsedSeconds));
+  const clearedCount = $derived(stats.clearedCount);
 
   const perHour = $derived(
-    elapsedSeconds > 30 && clearedCount > 0
-      ? (clearedCount / elapsedSeconds) * 3600
+    stats.elapsedSeconds > 30 && stats.clearedCount > 0
+      ? (stats.clearedCount / stats.elapsedSeconds) * 3600
       : 0,
   );
 
   const successRate = $derived(
-    clearedCount + failureCount > 0
-      ? Math.round((clearedCount / (clearedCount + failureCount)) * 100)
+    stats.clearedCount + stats.failureCount > 0
+      ? Math.round(
+          (stats.clearedCount / (stats.clearedCount + stats.failureCount)) *
+            100,
+        )
       : -1,
   );
-
-  function updateTimer() {
-    if (!startTime) return;
-    const s = Math.max(0, Math.floor((Date.now() - startTime) / 1000));
-    elapsedSeconds = s;
-    const h = Math.floor(s / 3600);
-    const m = Math.floor((s % 3600) / 60);
-    const ss = s % 60;
-    const pad = (n: number) => String(n).padStart(2, "0");
-    elapsed = h > 0 ? `${pad(h)}:${pad(m)}:${pad(ss)}` : `${pad(m)}:${pad(ss)}`;
-  }
-
-  onMount(() => {
-    timer = setInterval(updateTimer, 1000);
-
-    let logUnsub: (() => void) | undefined;
-    listen<any>(EventNames.LOG_MESSAGE, (event) => {
-      const msg = event.payload;
-      if (msg.profile_index !== get(activeProfile)) return;
-      if (!get(profileStates)[get(activeProfile)]?.active_task) return;
-      const text = typeof msg.message === "string" ? msg.message : "";
-      if (["WARNING", "ERROR", "FATAL"].includes(msg.level)) issueCount++;
-      if (/restart/i.test(text)) restartCount++;
-      if (/\bcleared:?\s*\d+/i.test(text)) clearedCount++;
-      else if (
-        /\b(completed|won|success)\b/i.test(text) &&
-        msg.level === "INFO"
-      )
-        clearedCount++;
-      if (/\b(failed|crashed|frozen|lost)\b/i.test(text)) failureCount++;
-    }).then((u) => {
-      logUnsub = u;
-    });
-
-    return () => {
-      clearInterval(timer);
-      logUnsub?.();
-    };
-  });
 </script>
 
 <div class="mini">
