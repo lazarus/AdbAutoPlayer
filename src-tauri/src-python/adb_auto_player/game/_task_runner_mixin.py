@@ -110,6 +110,9 @@ class TaskRunnerMixin(TemplateMixin):
             IO.cache_clear()
             return
 
+        if isinstance(error, KeyboardInterrupt):
+            raise error
+
         if isinstance(error, AutoPlayerUnrecoverableError):
             logging.error(
                 f"Task '{task}' failed with critical error: {error}, exiting..."
