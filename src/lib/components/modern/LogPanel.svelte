@@ -8,7 +8,6 @@
     activeProfile,
     appSettings,
     debugLogLevelOverwrite,
-    profileStates,
   } from "$lib/stores";
   import { EventNames } from "$lib/log/eventNames";
   import {
@@ -17,9 +16,6 @@
   } from "$lib/log/logHelper";
   import type { TextDisplayCardItem } from "$lib/log/logHelper";
   import { Instant } from "@js-joda/core";
-
-  const awakeMascot = "/images/3583082.png";
-  const sleepMascot = "/images/3583083.png";
 
   interface TaskCompletedEvent {
     profile_index: number;
@@ -156,8 +152,6 @@
     onClear();
   }
 
-  const isTaskRunning = $derived(!!$profileStates[profileIndex]?.active_task);
-
   let hiddenLevels = $state(new Set<string>());
 
   function toggleLevel(level: string) {
@@ -236,8 +230,7 @@
     <div class="resize-handle" onmousedown={startResize}></div>
   {/if}
   <div class="header">
-    <span class="status-dot"></span>
-    <div class="title">{$t("Live Log")}</div>
+    <div class="title">{$t("Log")}</div>
     <div class="level-filters">
       {#each ["INFO", "WARNING", "ERROR"] as lvl}
         <button
@@ -260,13 +253,6 @@
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="scroll-area" bind:this={scrollContainer} onclick={handleLogClick}>
-    <img
-      src={isTaskRunning ? sleepMascot : awakeMascot}
-      alt="mascot"
-      class="mascot-watermark"
-      draggable="false"
-    />
-
     {#each visibleEntries as entry}
       {@const lvl = (entry as any).level || "INFO"}
       <div class="log-line" data-level={lvl}>
@@ -328,13 +314,6 @@
     gap: 8px;
     padding: 10px 14px;
     border-bottom: 1px solid var(--line);
-  }
-
-  .status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 999px;
-    background: var(--ok);
   }
 
   .title {
@@ -496,32 +475,5 @@
     color: var(--text-4);
     text-align: center;
     font-style: italic;
-  }
-
-  .mascot-watermark {
-    position: absolute;
-    bottom: 0;
-    right: 8px;
-    width: 140px;
-    height: auto;
-    opacity: 0.15;
-    pointer-events: none;
-    user-select: none;
-    z-index: 0; /* Behind the text */
-    filter: grayscale(0.2);
-    transition:
-      opacity var(--dur-2),
-      width var(--dur-2);
-  }
-
-  /* Lateral mode specific adjustments */
-  .log-panel[data-position="right"] .mascot-watermark {
-    width: 110px;
-    right: 4px;
-    opacity: 0.12;
-  }
-
-  .log-panel:hover .mascot-watermark {
-    opacity: 0.25;
   }
 </style>

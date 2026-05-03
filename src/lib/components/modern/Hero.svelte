@@ -151,9 +151,6 @@
 {:else}
   <!-- Loud running hero -->
   <div class="hero-running">
-    <!-- moving stripes bg -->
-    <div class="stripes" aria-hidden="true"></div>
-
     <div class="inner">
       <div
         class="game-icon-badge"
@@ -167,7 +164,6 @@
         {:else}
           {gameIcon.initials}
         {/if}
-        <span class="ring"></span>
       </div>
 
       <div class="main-info">
@@ -383,19 +379,6 @@
     overflow: hidden;
   }
 
-  .stripes {
-    position: absolute;
-    inset: 0;
-    opacity: 0.08;
-    pointer-events: none;
-    background-image: repeating-linear-gradient(
-      135deg,
-      var(--accent) 0 2px,
-      transparent 2px 14px
-    );
-    animation: slide 14s linear infinite;
-  }
-
   .inner {
     position: relative;
     display: flex;
@@ -405,18 +388,18 @@
   }
 
   .game-icon-badge {
-    width: 72px;
-    height: 72px;
+    width: 88px;
+    height: 88px;
     aspect-ratio: 1 / 1;
-    border-radius: 16px;
+    border-radius: 18px;
     display: grid;
     place-items: center;
     color: white;
     font-weight: 800;
-    font-size: 24px;
+    font-size: 28px;
     letter-spacing: -0.02em;
     position: relative;
-    flex: 0 0 72px;
+    flex: 0 0 88px;
   }
 
   .game-icon-badge.game-icon-image {
@@ -436,15 +419,6 @@
     background: transparent;
     border: none;
     padding: 0;
-  }
-
-  .ring {
-    position: absolute;
-    inset: -4px;
-    border-radius: 20px;
-    border: 2px solid color-mix(in oklab, var(--accent) 50%, transparent);
-    animation: ringpulse 2s ease-out infinite;
-    pointer-events: none;
   }
 
   .main-info {

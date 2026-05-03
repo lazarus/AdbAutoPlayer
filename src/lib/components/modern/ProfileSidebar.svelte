@@ -13,9 +13,6 @@
   let { collapsed, onAddProfile }: Props = $props();
 
   const profiles = $derived($appSettings?.profiles?.profiles ?? []);
-  const runningCount = $derived(
-    $profileStates.filter((p) => p?.active_task).length,
-  );
 
   async function selectProfile(index: number) {
     if (!$appSettings) return;
@@ -130,11 +127,6 @@
           </div>
         </button>
       {/each}
-    </div>
-
-    <div class="footer">
-      <span>{profiles.length} {$t("profiles")}</span>
-      <span class="mono">{runningCount} {$t("running")}</span>
     </div>
   </div>
 {:else}
@@ -322,19 +314,6 @@
 
   .play-icon {
     color: var(--ok);
-  }
-
-  .footer {
-    padding: 10px 12px;
-    border-top: 1px solid var(--line);
-    font-size: 11px;
-    color: var(--text-4);
-    display: flex;
-    justify-content: space-between;
-  }
-
-  .mono {
-    font-family: var(--font-mono);
   }
 
   .rail {

@@ -120,10 +120,6 @@
     }
   }
 
-  function toggleTheme() {
-    $uiState.theme = $uiState.theme === "dark" ? "light" : "dark";
-  }
-
   function handleDocs() {
     invoke("open_docs");
   }
@@ -318,7 +314,6 @@
 <div class="app-container {$uiState.theme}">
   <StatusBar
     theme={$uiState.theme}
-    onToggleTheme={toggleTheme}
     onToggleSidebar={toggleSidebar}
     onToggleLog={toggleLog}
     onDocs={handleDocs}

@@ -9,7 +9,6 @@
 
   interface Props {
     theme: "dark" | "light";
-    onToggleTheme: () => void;
     onToggleSidebar: () => void;
     onToggleLog: () => void;
     onDocs: () => void;
@@ -24,7 +23,6 @@
 
   let {
     theme,
-    onToggleTheme,
     onToggleSidebar,
     onToggleLog,
     onDocs,
@@ -122,23 +120,7 @@
     >
   </div>
 
-  <button class="icon-btn" title={$t("Customize Theme")} onclick={onCustomizer}>
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="1.7"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      width="14"
-      height="14"
-      ><path
-        d="M12 2a10 10 0 0 0-10 10 10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2Z"
-      /><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z" /></svg
-    >
-  </button>
-
-  <button class="icon-btn" onclick={onToggleTheme} title={$t("Toggle theme")}>
+  <button class="icon-btn" title={$t("Theme & accent")} onclick={onCustomizer}>
     {#if theme === "dark"}
       <svg
         viewBox="0 0 24 24"
