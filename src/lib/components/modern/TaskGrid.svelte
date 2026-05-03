@@ -238,12 +238,16 @@
                     {#if b.isProcessRunning}
                       <span class="running-tag">● {$t("Run")}</span>
                     {:else}
-                      <div class="play-box">
+                      <div class="play-box" aria-hidden="true">
                         <svg
                           viewBox="0 0 24 24"
-                          fill="currentColor"
-                          width="10"
-                          height="10"><path d="M8 5v14l11-7z" /></svg
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          width="12"
+                          height="12"><path d="m9 18 6-6-6-6" /></svg
                         >
                       </div>
                     {/if}

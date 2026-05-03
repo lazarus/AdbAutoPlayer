@@ -103,10 +103,10 @@
     <div class="version">v{$appVersion}</div>
   </div>
 
-  <div class="divider"></div>
+  <div class="spacer"></div>
 
-  <!-- current profile chip -->
-  <div class="profile-chip">
+  <!-- current profile chip (compact, on right) -->
+  <div class="profile-chip" title={statusText}>
     <span
       class="status-dot"
       style="background: {dotColor}; box-shadow: {status === 'running'
@@ -115,16 +115,12 @@
         ? 'pulse 1.6s ease-in-out infinite'
         : 'none'}"
     ></span>
+    <span class="device-id">{profile?.device_id || $t("no device")}</span>
+    <span class="sep">·</span>
     <span class="profile-name"
       >{$appSettings?.profiles?.profiles?.[$activeProfile] ?? "Profile"}</span
     >
-    <span class="sep">·</span>
-    <span class="device-id">{profile?.device_id || $t("no device")}</span>
-    <span class="sep-alt">·</span>
-    <span class="status-label">{statusText}</span>
   </div>
-
-  <div class="spacer"></div>
 
   <button class="icon-btn" title={$t("Customize Theme")} onclick={onCustomizer}>
     <svg
@@ -299,21 +295,15 @@
     font-family: var(--font-mono);
   }
 
-  .divider {
-    width: 1px;
-    height: 20px;
-    background: var(--line);
-  }
-
   .profile-chip {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 4px 10px 4px 8px;
+    gap: 6px;
+    padding: 3px 10px 3px 8px;
     border-radius: 999px;
     background: var(--bg-2);
     border: 1px solid var(--line);
-    font-size: 12px;
+    font-size: 11.5px;
   }
 
   .status-dot {
@@ -326,23 +316,14 @@
     font-weight: 600;
   }
 
-  .sep,
-  .sep-alt {
-    color: var(--text-3);
-  }
-
-  .sep-alt {
+  .sep {
     color: var(--text-4);
   }
 
   .device-id {
-    color: var(--text-3);
+    color: var(--text-2);
     font-family: var(--font-mono);
     font-size: 11px;
-  }
-
-  .status-label {
-    color: var(--text-3);
   }
 
   .spacer {

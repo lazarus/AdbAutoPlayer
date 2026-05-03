@@ -1,15 +1,11 @@
 <script lang="ts">
   import { t } from "$lib/i18n/i18n";
-  import {
-    activeProfile,
-    profileStates,
-    appSettings,
-    uiState,
-  } from "$lib/stores";
+  import { activeProfile, profileStates, uiState } from "$lib/stores";
   import { get } from "svelte/store";
   import { onMount } from "svelte";
   import { listen } from "@tauri-apps/api/event";
   import { EventNames } from "$lib/log/eventNames";
+  import { getGameIcon } from "$lib/utils/gameIcons";
   import type { MenuButton } from "$lib/menu/model";
 
   interface Props {
@@ -26,9 +22,7 @@
     activeTaskButton?.option?.label ?? activeTask,
   );
   const deviceId = $derived(profile?.device_id);
-  const profileName = $derived(
-    $appSettings?.profiles?.profiles?.[$activeProfile],
-  );
+  const gameIcon = $derived(getGameIcon(gameTitle));
 
   let startTime = $state<number | null>(null);
   let elapsed = $state("00:00");
@@ -118,10 +112,28 @@
     class="hero-idle"
     class:compact={$uiState.taskViewVariant === "accordion"}
   >
-    <div class="icon-idle">
-      <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12"
-        ><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" /></svg
-      >
+    <div
+      class="icon-idle"
+      class:icon-idle-game={!!gameTitle}
+      style={gameTitle
+        ? `background: linear-gradient(135deg, color-mix(in oklab, ${gameIcon.color} 70%, white), ${gameIcon.color}); color: white;`
+        : ""}
+    >
+      {#if gameTitle}
+        <span class="idle-initials">{gameIcon.initials}</span>
+      {:else}
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          width="14"
+          height="14"
+          ><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg
+        >
+      {/if}
     </div>
     <div class="content">
       <div class="meta">
@@ -130,12 +142,9 @@
       <div class="title">
         {gameTitle
           ? $t("Pick a task to begin")
-          : $t("Start any supported game")}
-      </div>
-      <div class="status">
-        {deviceId
-          ? `${profileName || "Profile"} · ${deviceId}`
-          : $t("No device connected — check ADB settings")}
+          : deviceId
+            ? $t("Start any supported game")
+            : $t("No device connected — check ADB settings")}
       </div>
     </div>
   </div>
@@ -149,63 +158,121 @@
     <div class="stripes" aria-hidden="true"></div>
 
     <div class="inner">
-      <div class="status-icon">
-        <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"
-          ><path d="M8 5v14l11-7z" /></svg
-        >
+      <div
+        class="game-icon-badge"
+        style="background: linear-gradient(135deg, color-mix(in oklab, {gameIcon.color} 80%, white), {gameIcon.color}); box-shadow: 0 6px 18px color-mix(in oklab, {gameIcon.color} 35%, transparent);"
+      >
+        {gameIcon.initials}
         <span class="ring"></span>
       </div>
 
       <div class="main-info">
         <div class="tag-row">
           <span class="tag">● {$t("Running")}</span>
-          <span class="game-name">{$t(gameTitle || "")}</span>
+          <span class="game-sub">{$t(gameTitle || "")}</span>
         </div>
         <div class="task-name">
           {displayTaskName}
         </div>
         <div class="stats">
           <div class="stat">
-            <div class="stat-label">{$t("elapsed")}</div>
-            <div class="stat-value big">{elapsed}</div>
-          </div>
-          <div class="stat">
-            <div class="stat-label">{$t("device")}</div>
-            <div class="stat-value">{deviceId}</div>
-          </div>
-          <div class="stat">
-            <div class="stat-label">{$t("profile")}</div>
-            <div class="stat-value">{profileName}</div>
+            <span class="stat-icon" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                width="12"
+                height="12"
+                ><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg
+              >
+            </span>
+            <span class="stat-value big">{elapsed}</span>
           </div>
           {#if perHour > 0}
             <div class="stat">
-              <div class="stat-label">{$t("per hour")}</div>
-              <div class="stat-value stat-ok">{perHour.toFixed(1)}</div>
+              <span
+                class="stat-icon"
+                aria-hidden="true"
+                style="color: var(--ok)"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  width="12"
+                  height="12"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" /></svg
+                >
+              </span>
+              <span class="stat-value stat-ok">{perHour.toFixed(1)}</span>
+              <span class="stat-unit">/hr</span>
             </div>
           {/if}
           {#if successRate >= 0}
             <div class="stat">
-              <div class="stat-label">{$t("success")}</div>
-              <div
+              <span class="stat-icon" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  width="12"
+                  height="12"
+                  ><path d="M3 17 9 11l4 4 8-8" /><path d="M14 7h7v7" /></svg
+                >
+              </span>
+              <span
                 class="stat-value"
                 class:stat-ok={successRate >= 90}
                 class:stat-warn={successRate >= 60 && successRate < 90}
-                class:stat-err={successRate < 60}
+                class:stat-err={successRate < 60}>{successRate}%</span
               >
-                {successRate}%
-              </div>
+              <span class="stat-unit">{$t("success")}</span>
             </div>
           {/if}
           {#if restartCount > 0}
             <div class="stat">
-              <div class="stat-label">{$t("restarts")}</div>
-              <div class="stat-value stat-warn">{restartCount}</div>
+              <span class="stat-icon stat-warn" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  width="12"
+                  height="12"
+                  ><path d="M21 12a9 9 0 1 1-3-6.7L21 8" /><path
+                    d="M21 3v5h-5"
+                  /></svg
+                >
+              </span>
+              <span class="stat-value stat-warn">{restartCount}</span>
+              <span class="stat-unit">{$t("restarts")}</span>
             </div>
           {/if}
           {#if issueCount > 0}
             <div class="stat">
-              <div class="stat-label">{$t("issues")}</div>
-              <div class="stat-value stat-err">{issueCount}</div>
+              <span class="stat-icon stat-err" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  width="12"
+                  height="12"
+                  ><path
+                    d="M10.3 3.86 1.82 18a2 2 0 0 0 1.7 3h16.96a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"
+                  /></svg
+                >
+              </span>
+              <span class="stat-value stat-err">{issueCount}</span>
+              <span class="stat-unit">{$t("issues")}</span>
             </div>
           {/if}
         </div>
@@ -224,24 +291,35 @@
 <style>
   .hero-idle {
     margin: 18px 20px 0;
-    padding: 22px;
+    padding: 16px 20px;
     border-radius: var(--radius-lg);
     background: var(--bg-1);
     border: 1px solid var(--line);
     display: flex;
     align-items: center;
-    gap: 18px;
+    gap: 14px;
   }
 
   .icon-idle {
-    width: 52px;
-    height: 52px;
+    width: 44px;
+    height: 44px;
     border-radius: 12px;
     background: linear-gradient(135deg, var(--bg-3), var(--bg-2));
     display: grid;
     place-items: center;
     color: var(--text-3);
     border: 1px solid var(--line);
+    flex: 0 0 44px;
+  }
+
+  .icon-idle-game {
+    border: none;
+  }
+
+  .idle-initials {
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: -0.02em;
   }
 
   .content {
@@ -259,20 +337,14 @@
   }
 
   .title {
-    font-size: 20px;
+    font-size: 17px;
     font-weight: 600;
     letter-spacing: -0.015em;
   }
 
-  .status {
-    color: var(--text-3);
-    margin-top: 4px;
-    font-size: 12px;
-  }
-
   .hero-running {
     margin: 18px 20px 0;
-    padding: 22px;
+    padding: 16px 20px;
     border-radius: var(--radius-lg);
     background:
       radial-gradient(
@@ -308,17 +380,18 @@
     flex-wrap: wrap;
   }
 
-  .status-icon {
-    width: 64px;
-    height: 64px;
+  .game-icon-badge {
+    width: 52px;
+    height: 52px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--accent-hi), var(--accent-lo));
     display: grid;
     place-items: center;
     color: white;
-    box-shadow: 0 8px 24px color-mix(in oklab, var(--accent) 30%, transparent);
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: -0.02em;
     position: relative;
-    flex: 0 0 64px;
+    flex: 0 0 52px;
   }
 
   .ring {
@@ -353,47 +426,55 @@
     border-radius: 999px;
   }
 
-  .game-name {
+  .game-sub {
     font-size: 11px;
     color: var(--text-3);
     font-weight: 500;
   }
 
   .task-name {
-    font-size: 22px;
+    font-size: 19px;
     font-weight: 700;
     letter-spacing: -0.02em;
-    line-height: 1.15;
+    line-height: 1.2;
     word-break: break-word;
   }
 
   .stats {
     display: flex;
-    gap: 22px;
-    margin-top: 10px;
-    font-size: 12px;
-    color: var(--text-3);
-    font-family: var(--font-mono);
+    gap: 16px;
+    margin-top: 8px;
+    align-items: center;
     flex-wrap: wrap;
   }
 
-  .stat-label {
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--text-4);
+  .stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-mono);
+  }
+
+  .stat-icon {
+    color: var(--text-3);
+    display: inline-flex;
+    align-items: center;
   }
 
   .stat-value {
-    font-size: 12px;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: 600;
     color: var(--text-1);
-    margin-top: 2px;
   }
 
   .stat-value.big {
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 15px;
+  }
+
+  .stat-unit {
+    font-size: 11px;
+    color: var(--text-3);
+    font-weight: 500;
   }
 
   .stat-warn {
@@ -459,24 +540,25 @@
 
   .hero-running.compact {
     margin: 12px 20px 0;
-    padding: 12px 18px;
+    padding: 10px 14px;
   }
-  .hero-running.compact .status-icon {
-    width: 36px;
-    height: 36px;
-    flex: 0 0 36px;
+  .hero-running.compact .game-icon-badge {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
     border-radius: 10px;
+    font-size: 13px;
   }
   .hero-running.compact .ring {
     inset: -2px;
     border-radius: 12px;
   }
   .hero-running.compact .task-name {
-    font-size: 16px;
+    font-size: 15px;
   }
   .hero-running.compact .stats {
-    gap: 14px;
-    margin-top: 6px;
+    gap: 12px;
+    margin-top: 4px;
   }
   .hero-running.compact .stat-value.big {
     font-size: 14px;
