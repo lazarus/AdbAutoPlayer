@@ -83,6 +83,19 @@ class BattleAllowsManualSettings(CommonBattleModeSettings):
     run_manual_formations_last: bool = Field(
         default=True, alias="Run Manual Formations Last"
     )
+    manual_battle_interaction: bool = Field(
+        default=False,
+        alias="Manual Battle Interaction",
+        title="Manual Battle Interaction",
+    )
+    manual_cast_heroes: list[HeroesEnum] = Field(
+        default_factory=list,
+        alias="Manual Cast Heroes",
+        title="Manual Cast Heroes",
+        json_schema_extra={
+            "formType": "AlnumGroupedCheckboxArray",
+        },
+    )
 
 
 class AFKStagesSettings(BattleAllowsManualSettings):

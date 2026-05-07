@@ -14,7 +14,7 @@ from adb_auto_player.exceptions import (
     GameActionFailedError,
     GameTimeoutError,
 )
-from adb_auto_player.image_manipulation import IO, Color, Cropping
+from adb_auto_player.image_manipulation import IO, Color, Cropping, Scaling
 from adb_auto_player.models import ConfidenceValue
 from adb_auto_player.models.geometry import Coordinates, Point, PointOutsideDisplay
 from adb_auto_player.models.image_manipulation import CropRegions
@@ -61,6 +61,7 @@ class TemplateMixin(InputMixin):
         grayscale: bool = False,
         crop_regions: CropRegions = CropRegions(),
         screenshot: np.ndarray | None = None,
+        template_scale: float = 1.0,
     ) -> TemplateMatchResult | None:
         """Find a template on the screen.
 
@@ -72,6 +73,8 @@ class TemplateMixin(InputMixin):
             crop_regions (CropRegions, optional): Crop percentages.
             screenshot (np.ndarray, optional): Screenshot image. Will fetch screenshot
                 if None
+            template_scale (float, optional): Scale factor applied to template before
+                matching. Defaults to 1.0 (no scaling).
 
         Returns:
             TemplateMatchResult | None
@@ -81,9 +84,13 @@ class TemplateMixin(InputMixin):
             crop_regions=crop_regions,
         )
 
+        template_image = self._load_image(template=template, grayscale=grayscale)
+        if template_scale != 1.0:
+            template_image = Scaling.scale_percent(template_image, template_scale)
+
         match = TemplateMatcher.find_template_match(
             base_image=crop_result.image,
-            template_image=self._load_image(template=template, grayscale=grayscale),
+            template_image=template_image,
             match_mode=match_mode,
             threshold=threshold or self.default_threshold,
             grayscale=grayscale,

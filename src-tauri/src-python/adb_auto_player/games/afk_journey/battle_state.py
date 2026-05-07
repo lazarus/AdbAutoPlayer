@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 
 
@@ -30,6 +30,9 @@ class BattleState:
     max_attempts_reached: bool = False
     formation_num: int = 0
     faction: str | None = None
+    is_manual_battle: bool = False
+    manual_active_heroes: list = field(default_factory=list)
+    manual_hero_positions: dict = field(default_factory=dict)
 
     @property
     def section_header(self) -> str | None:

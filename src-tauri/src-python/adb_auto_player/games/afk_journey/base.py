@@ -62,6 +62,11 @@ class AFKJourneyBase(Navigation, HeroScannerMixin, Game):
     BATTLE_DISMISS_TAP = Point(x=550, y=1800)
     BATTLE_RESULT_DISMISS_TAP = Point(x=950, y=1800)
 
+    # Offset from hero portrait center to the auto-battle cog (top-right of card).
+    # Tune these if the cog tap lands in the wrong place.
+    MANUAL_COG_X_OFFSET: int = 55
+    MANUAL_COG_Y_OFFSET: int = -65
+
     @property
     def min_timeout(self) -> float:
         return self.template_timeout
@@ -402,6 +407,8 @@ class AFKJourneyBase(Navigation, HeroScannerMixin, Game):
             True if formation should be skipped, False otherwise.
         """
         is_manual = self._is_manual_formation()
+        self.battle_state.is_manual_battle = is_manual
+        self.battle_state.manual_active_heroes = []
 
         # In only_manual mode, skip non-manual formations
         if only_manual and not is_manual:
@@ -418,6 +425,11 @@ class AFKJourneyBase(Navigation, HeroScannerMixin, Game):
                 f"Formation contains excluded Hero: '{excluded_hero}', skipping."
             )
             return True
+
+        if is_manual and self._get_settings_for_mode("manual_battle_interaction"):
+            self.battle_state.manual_active_heroes = (
+                self._find_manual_cast_heroes_in_formation()
+            )
 
         return False
 
@@ -461,6 +473,25 @@ class AFKJourneyBase(Navigation, HeroScannerMixin, Game):
             return excluded_heroes.get(result.template)
         except GameTimeoutError:
             return None
+
+    def _find_manual_cast_heroes_in_formation(self) -> list:
+        """Return which manual_cast_heroes are present in the current formation."""
+        heroes = self._get_settings_for_mode("manual_cast_heroes")
+        if not heroes:
+            return []
+        found = []
+        for hero in heroes:
+            clean_name = re.sub(r"[\s&]", "", str(hero).lower())
+            match = self.game_find_template_match(
+                template=f"heroes/{clean_name}.png",
+                threshold=ConfidenceValue("85%"),
+                crop_regions=CropRegions(
+                    left="10%", right="30%", top="35%", bottom="40%"
+                ),
+            )
+            if match:
+                found.append(hero)
+        return found
 
     def _start_battle(self) -> bool:
         """Begin battle.
@@ -579,6 +610,47 @@ class AFKJourneyBase(Navigation, HeroScannerMixin, Game):
                     "battle/result.png",
                 ]
 
+    def _disable_hero_auto_battle(self) -> None:
+        """Disable auto-battle for heroes confirmed present in the formation."""
+        heroes = self.battle_state.manual_active_heroes
+        if not heroes:
+            return
+
+        for hero in heroes:
+            clean_name = re.sub(r"[\s&]", "", str(hero).lower())
+            template = f"heroes/{clean_name}.png"
+            portrait = self.game_find_template_match(
+                template=template,
+                threshold=ConfidenceValue("60%"),
+                crop_regions=CropRegions(top=0.75),
+                template_scale=2.1,
+            )
+            if not portrait:
+                logging.warning(f"{hero} portrait not found, skipping cog tap")
+                continue
+            self.battle_state.manual_hero_positions[hero] = Point(
+                portrait.x, portrait.y
+            )
+            cog = Point(
+                x=portrait.x + self.MANUAL_COG_X_OFFSET,
+                y=portrait.y + self.MANUAL_COG_Y_OFFSET,
+            )
+            self.tap(cog)
+            self.sleep_action()
+
+    def _cast_ready_ultimates(self) -> None:
+        """Self-cast charged ultimates for each hero with a stored battle position."""
+        if not self.battle_state.is_manual_battle:
+            return
+        if not self._get_settings_for_mode("manual_battle_interaction"):
+            return
+
+        for _, position in self.battle_state.manual_hero_positions.items():
+            self.tap(position)
+            sleep(0.15)
+            self.tap(position)
+            sleep(0.5)
+
     def _handle_single_stage(self) -> bool:
         """Handles a single stage of a battle.
 
@@ -586,14 +658,19 @@ class AFKJourneyBase(Navigation, HeroScannerMixin, Game):
             bool: True if the battle was successful, False if not.
         """
         logging.debug("_handle_single_stage")
+        manual_interaction = self._get_settings_for_mode("manual_battle_interaction")
         attempts = self._get_settings_for_mode("attempts")
         attempt = 0
 
         while attempt < attempts:
             attempt += 1
+            self.battle_state.manual_hero_positions.clear()
             logging.info(f"Starting Battle #{attempt}")
             if not self._start_battle():
                 break
+
+            if self.battle_state.is_manual_battle and manual_interaction:
+                self._disable_hero_auto_battle()
 
             if self.battle_state.section_header:
                 SummaryGenerator.increment(self.battle_state.section_header, "Battles")
@@ -641,6 +718,7 @@ class AFKJourneyBase(Navigation, HeroScannerMixin, Game):
                 else:
                     no_change_detected_since = None
                 prev_crop = curr_crop
+                self._cast_ready_ultimates()
                 sleep(1)
 
         # Fallback: non-timer mode uses simple wait_for_any_template
